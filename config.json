@@ -1,0 +1,23 @@
+{
+  "openai": {
+    "model": "gpt-4.1-nano-2025-04-14",
+    "apiKey":"",
+    "key":"OPENAI_API_KEY"
+  },
+  "gemini": {
+    "key": "GEMINI_API_KEY",
+    "baseURL": "https://generativelanguage.googleapis.com/v1beta/openai/",
+    "model": "gemini-2.0-flash-exp",
+    "apiKey":""
+
+  },
+  "claude": {
+    "key": "CLAUDE_API_KEY",
+    "baseURL": "https://api.anthropic.com/v1/",
+    "model": "claude-3-haiku-20240307",
+    "apiKey":""
+
+  }
+  
+
+}
