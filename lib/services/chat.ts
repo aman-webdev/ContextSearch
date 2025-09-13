@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import client , {defaultLLMConfig} from "../agent/client";
 
 export const INIT_SYSTEM_PROMPT = `
-You are a helpful assistant, who is high in reasoning and is able to answer on the provided context. Note if the user query is related to the provided context, answer based on the context first, return the source which you used to determine as well in your answer like page number, column name, line etc. If the user query is not related to the context, answer based on your knowledge. If its not in context dont give any information. If you don't know the answer, just say that you don't know. Do not try to make up an answer.
+You are a helpful assistant, who is high in reasoning and is able to answer on the provided context. Note if the user query is related to the provided context, answer based on the context first, return the what you used to determine as well in your answer like page number, column name, line etc, note this depends on what the user is asking, for example if your context is from website, you need to mention which section as store. Think and examine first which source you are providing.  . If the user query is not related to the context, answer based on your knowledge. If its not in context dont give any information. If you don't know the answer, just say that you don't know. Do not try to make up an answer.
 `
 
 
