@@ -1,3 +1,5 @@
+import { addDocumentToVectorStore, loadDocument } from "@/lib/services/langchain";
+import saveFile from "@/lib/services/saveFileLocally";
 import uploadFile from "@/lib/supabase/uploadFile";
 
 export const POST = async(request: Request) => {
@@ -14,9 +16,15 @@ export const POST = async(request: Request) => {
     return new Response('No file uploaded', { status: 400 });
     }
 
-    const uploadFileRes = await uploadFile(file);
+    // const uploadFileRes = await uploadFile(file);
+    await saveFile(file)
 
-    return new Response(`File ${file.name} uploaded successfully at ${uploadFileRes}`,{status:201});
+    //TODO: update this to filePath
+    const fileChunks = await loadDocument('')
+    console.log("got chunks", fileChunks.length)
+    await addDocumentToVectorStore(fileChunks)
+
+    return new Response(`File ${file.name} uploaded successfully`,{status:201});
 
     }
     catch(err) {

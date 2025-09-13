@@ -3,9 +3,22 @@ import OpenAI from "openai";
 import client , {defaultLLMConfig} from "../agent/client";
 
 
-const chat = async(userQuery : string, messages : OpenAI.Chat.ChatCompletionMessageParam[]) => {
+const chat = async(userQuery : string, messages : OpenAI.Chat.ChatCompletionMessageParam[], systemPrompt ?: string) => {
 
     try{
+
+    const messagesWithSystemPrompt: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        {
+            role: 'system' as const,
+            content: systemPrompt || 'You are a helpful assistant.'
+        },
+        ...messages,
+        //TODO: move this to messages
+        {
+            role: 'user' as const,
+            content: userQuery
+        }
+    ]
 
     // TODO: first insert the message in db and send directly
     //  const userMessage : OpenAI.Chat.ChatCompletionMessageParam = {
@@ -15,7 +28,7 @@ const chat = async(userQuery : string, messages : OpenAI.Chat.ChatCompletionMess
     // messages.push(userMessage)
      const response = await client.chat.completions.create({
         model : defaultLLMConfig.model, 
-        messages : messages
+        messages : messagesWithSystemPrompt
     
     })  
 
