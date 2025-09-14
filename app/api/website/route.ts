@@ -19,13 +19,15 @@ export const POST = async(request: Request) => {
             return new Response(JSON.stringify({error:'Invalid URL'}), { status: 400 });
         }
 
-        const websiteDocs = await websiteLoader(url)
+        const {websiteDocs ,additionalWebsiteMetadata} = await websiteLoader(url)
         const websiteChunks = await splitTextToChunks(websiteDocs)
 
         await addDocumentToVectorStore(websiteChunks)
         
 
-        return new Response(JSON.stringify({message: `Website ${url} processed successfully`}),{status:201});
+        return new Response(JSON.stringify(
+        {message: `Website ${url} processed successfully`, metadata : additionalWebsiteMetadata}
+        ),{status:201});
     }
     catch(err) {
         console.log('website route: ',err)

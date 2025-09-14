@@ -1,18 +1,32 @@
 import chat, { INIT_SYSTEM_PROMPT } from "@/lib/services/chat";
-import { queryVectorStore } from "@/lib/services/langchain";
+import { queryVectorStore, queryVectorStoreWithFilter } from "@/lib/services/langchain";
 
+
+interface AdditionalMetadata {
+    fileName: string;
+    type: "DOCUMENT" | "WEBSITE";
+    ext: string;
+}
+
+interface ChatRequest {
+    query: string;
+    additionalMetadata?: AdditionalMetadata;
+}
 
 export const POST = async(request: Request) => {
     try{
         const body = await request.json()
-        const {query}   = body  as {query: string}
+        const {query, additionalMetadata} = body as ChatRequest
         console.log(query,'query')
+        console.log(additionalMetadata, 'additionalMetadata')
 
         if(!query || query.trim().length === 0) {
             return new Response(JSON.stringify({error:'Query is required'}), { status: 400 });
         }
 
-        const retreivedDocs = await queryVectorStore(query)
+        const retreivedDocs = additionalMetadata 
+            ? await queryVectorStoreWithFilter(query, additionalMetadata)
+            : await queryVectorStore(query)
         console.log('Retreived docs', retreivedDocs.length)
         
 

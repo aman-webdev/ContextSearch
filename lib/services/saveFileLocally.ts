@@ -14,6 +14,7 @@ const saveFile = async (file: File, pathToStore?: string, dir?: string) => {
     console.log(`saveFileLocally: Saving file at ${filePath}`)
     fs.writeFileSync(filePath, data)
     console.log(`saveFileLocally: File saved at ${filePath}`)
+    return filePath
 
 }
 

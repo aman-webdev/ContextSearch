@@ -17,14 +17,17 @@ export const POST = async(request: Request) => {
     }
 
     // const uploadFileRes = await uploadFile(file);
-    await saveFile(file)
+   const path =  await saveFile(file)
 
     //TODO: update this to filePath
-    const fileChunks = await loadDocument('')
-    console.log("got chunks", fileChunks.length)
-    await addDocumentToVectorStore(fileChunks)
+    const {docs, additionalDocMetadata} = await loadDocument(path)
+    console.log("got chunks", docs.length)
+    await addDocumentToVectorStore(docs)
 
-    return new Response(`File ${file.name} uploaded successfully`,{status:201});
+    return new Response(JSON.stringify({
+        message : `File ${file.name} uploaded successfully`,
+        metadata : additionalDocMetadata
+    }),{status:201});
 
     }
     catch(err) {
