@@ -32,9 +32,29 @@ export const POST = async(request: Request) => {
 
         // TODO: move this to DB
 
+        console.log(retreivedDocs)
+        // Format retrieved documents properly
+        const contextContent = retreivedDocs.map((doc, index) => {
+            const metadata = doc.metadata;
+            const content = doc.pageContent;
+
+            let sourceInfo = '';
+            if (metadata.type === 'DOCUMENT') {
+                sourceInfo = `[Document: ${metadata.fileName}]`;
+            } else if (metadata.type === 'WEBSITE') {
+                sourceInfo = `[Website: ${metadata.source || metadata.websiteURL}]`;
+            } else if (metadata.type === 'YOUTUBE_TRANSCRIPT') {
+                sourceInfo = `[YouTube: ${metadata.title} - ${metadata.source}]`;
+            }
+
+            return `${sourceInfo}\n${content}\n`;
+        }).join('\n---\n');
+
         const SYSTEM_PROMPT = `${INIT_SYSTEM_PROMPT}
-        ${retreivedDocs && retreivedDocs.length > 0 ? `Context:\n ${retreivedDocs.map((d, idx) => `Source ${idx+1}: ${d.pageContent}`).join('\n')}` : 'No relevant context found in the documents.'}
-        `
+
+## Context Documents:
+${contextContent}
+`
 
         const chatResponse = await chat(query, [], SYSTEM_PROMPT)
 

@@ -3,7 +3,7 @@ import LLMConfig from "@/config.json"
 
 export type LLM_TYPES = keyof typeof LLMConfig
 
-const LLM_USED: LLM_TYPES = 'gemini'
+const LLM_USED: LLM_TYPES = 'openai'
 
 const USED_LLM_CONFIG = LLMConfig[LLM_USED]
 

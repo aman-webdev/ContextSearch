@@ -106,6 +106,10 @@ export const websiteLoader = async (url: string) => {
 
     const websiteDocs = await loader.load();
 
+    if(!websiteDocs.length) throw new Error(`Could not load ${url}` )
+
+    const sourceData = websiteDocs[0].metadata
+
     const additionalWebsiteMetadata = {
       websiteURL : url,
       uploadedAt : Date.now(),
@@ -119,7 +123,7 @@ export const websiteLoader = async (url: string) => {
 
      
 
-    return {websiteDocs,additionalWebsiteMetadata};
+    return {websiteDocs,additionalWebsiteMetadata : {...additionalWebsiteMetadata,...sourceData}};
   } catch (err) {
     console.log("websiteLoader: Error loading website", err);
     throw err;
@@ -128,8 +132,8 @@ export const websiteLoader = async (url: string) => {
 
 export const splitTextToChunks = async (docs : Document<Record<string, any>>[]) => {
     const splitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 1000,
-  chunkOverlap: 200,
+  chunkSize: 2000,
+  chunkOverlap: 100,
 });
 
 const output = await splitter.splitDocuments(docs);

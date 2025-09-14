@@ -6,8 +6,12 @@ import NewChatInterface from '../components/chat/NewChatInterface';
 interface FileMetadata {
   fileName: string;
   uploadedAt: number;
-  type: "DOCUMENT" | "WEBSITE";
+  type: "DOCUMENT" | "WEBSITE" | "YOUTUBE_TRANSCRIPT";
   ext: string;
+  title?: string;
+  source?: string;
+  thumbnail?: string;
+  author?: string;
 }
 
 export default function Home() {
@@ -26,7 +30,14 @@ export default function Home() {
       const requestBody = {
         query: input,
         ...(selectedFile && {
-          additionalMetadata: {
+          additionalMetadata: selectedFile.ext === 'youtube' ? {
+            title: selectedFile.title,
+            source: selectedFile.source,
+            type: selectedFile.type
+          } : selectedFile.type === 'WEBSITE' ? {
+            source: selectedFile.source,
+            type: selectedFile.type
+          } : {
             fileName: selectedFile.fileName,
             type: selectedFile.type,
             ext: selectedFile.ext
@@ -95,6 +106,14 @@ export default function Home() {
     setTimeout(() => setUploadStatus(''), 5000);
   };
 
+  // Function to handle adding metadata directly (for YouTube)
+  const handleAddMetadata = (metadata: any) => {
+    setUploadedFiles(prev => [...prev, metadata]);
+    setSelectedFile(metadata);
+    setUploadStatus(`${metadata.fileName} added successfully!`);
+    setTimeout(() => setUploadStatus(''), 5000);
+  };
+
   const handleWebsiteSubmit = async (url: string) => {
     if (!url.trim()) return;
 
@@ -108,7 +127,15 @@ export default function Home() {
       });
 
       if (response.ok) {
-        setUploadStatus('Website processed successfully!');
+        const data = await response.json();
+
+        // If the response includes metadata, add it to uploadedFiles
+        if (data.metadata) {
+          setUploadedFiles(prev => [...prev, data.metadata]);
+          setSelectedFile(data.metadata);
+        }
+
+        setUploadStatus(data.message || 'Website processed successfully!');
       } else {
         const data = await response.json();
         setUploadStatus(data.error || 'Failed to process website.');
@@ -128,6 +155,7 @@ export default function Home() {
         isLoading={isLoading}
         onFileUpload={handleFileUpload}
         onWebsiteSubmit={handleWebsiteSubmit}
+        onAddMetadata={handleAddMetadata}
         uploadStatus={uploadStatus}
         uploadedFiles={uploadedFiles}
         selectedFile={selectedFile}

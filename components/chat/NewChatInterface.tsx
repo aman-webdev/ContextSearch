@@ -13,8 +13,12 @@ interface Message {
 interface FileMetadata {
   fileName: string;
   uploadedAt: number;
-  type: "DOCUMENT" | "WEBSITE";
+  type: "DOCUMENT" | "WEBSITE" | "YOUTUBE_TRANSCRIPT";
   ext: string;
+  title?: string;
+  source?: string;
+  thumbnail?: string;
+  author?: string;
 }
 
 interface NewChatInterfaceProps {
@@ -23,18 +27,20 @@ interface NewChatInterfaceProps {
   isLoading: boolean;
   onFileUpload: (file: File) => void;
   onWebsiteSubmit: (url: string) => void;
+  onAddMetadata: (metadata: FileMetadata) => void;
   uploadStatus: string;
   uploadedFiles: FileMetadata[];
   selectedFile: FileMetadata | null;
   onFileSelect: (file: FileMetadata | null) => void;
 }
 
-export default function NewChatInterface({ 
-  messages, 
-  onSendMessage, 
+export default function NewChatInterface({
+  messages,
+  onSendMessage,
   isLoading,
   onFileUpload,
   onWebsiteSubmit,
+  onAddMetadata,
   uploadStatus,
   uploadedFiles,
   selectedFile,
@@ -43,6 +49,92 @@ export default function NewChatInterface({
   const [input, setInput] = useState('');
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [isWebsiteModalOpen, setIsWebsiteModalOpen] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [urlError, setUrlError] = useState('');
+  const [isProcessingUrl, setIsProcessingUrl] = useState(false);
+
+  // Function to detect if URL is a YouTube video
+  const isYouTubeUrl = (url: string) => {
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)/;
+    return youtubeRegex.test(url);
+  };
+
+  // Function to validate URL format
+  const isValidUrl = (url: string) => {
+    try {
+      const urlToTest = url.startsWith('http') ? url : `https://${url}`;
+      const urlObj = new URL(urlToTest);
+
+      // Must have valid protocol and hostname
+      const hasValidProtocol = urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      const hasValidHostname = urlObj.hostname &&
+        urlObj.hostname.includes('.') &&
+        urlObj.hostname.length > 3 &&
+        !urlObj.hostname.startsWith('.') &&
+        !urlObj.hostname.endsWith('.');
+
+      return hasValidProtocol && hasValidHostname;
+    } catch {
+      return false;
+    }
+  };
+
+  // Handle website/YouTube URL submission
+  const handleUrlSubmit = async () => {
+    // Validate URL format first - return immediately if invalid
+    if (!websiteUrl.trim() || !isValidUrl(websiteUrl)) {
+      setUrlError('Please enter a valid URL');
+      return;
+    }
+
+    // Clear previous error and set loading
+    setUrlError('');
+    setIsProcessingUrl(true);
+
+    try {
+      if (isYouTubeUrl(websiteUrl)) {
+        // Send ONLY to YouTube endpoint for YouTube URLs
+        const response = await fetch('/api/youtube', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: websiteUrl })
+        });
+
+        if (!response.ok) {
+          setUrlError('Failed to process YouTube URL');
+          return;
+        }
+
+        // Add YouTube video to the sidebar
+        const responseData = await response.json();
+        if (responseData.data) {
+          // Convert YouTube data to sidebar metadata format
+          const metadata = {
+            fileName: responseData.data.title,
+            uploadedAt: responseData.data.uploadedAt,
+            type: "YOUTUBE_TRANSCRIPT" as const,
+            ext: "youtube",
+            title: responseData.data.title,
+            source: responseData.data.source,
+            thumbnail: responseData.data.thumbnail,
+            author: responseData.data.author
+          };
+          onAddMetadata(metadata);
+        }
+      } else {
+        // Send ONLY to website endpoint for regular URLs
+        onWebsiteSubmit(websiteUrl);
+      }
+
+      setWebsiteUrl('');
+      setUrlError('');
+    } catch (error) {
+      console.error('Error submitting URL:', error);
+      setUrlError('Failed to add URL');
+    } finally {
+      setIsProcessingUrl(false);
+    }
+  };
 
   const handleSend = () => {
     if (!input.trim() || isLoading) return;
@@ -116,15 +208,15 @@ export default function NewChatInterface({
                       key={file.fileName}
                       onClick={() => onFileSelect(file)}
                       className={`group w-full text-left p-4 rounded-xl border transition-all duration-200 hover:shadow-sm ${
-                        selectedFile?.fileName === file.fileName 
-                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200/60 shadow-md' 
+                        selectedFile?.fileName === file.fileName
+                          ? 'bg-gradient-to-r from-gray-800 via-gray-700 to-stone-700 border-gray-600 shadow-md'
                           : 'bg-white border-stone-200/60 hover:bg-stone-50/50 hover:border-stone-300'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                          selectedFile?.fileName === file.fileName 
-                            ? 'bg-blue-100 text-blue-600' 
+                          selectedFile?.fileName === file.fileName
+                            ? 'bg-gray-600 text-white'
                             : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
                         }`}>
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,21 +225,16 @@ export default function NewChatInterface({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-semibold truncate ${
-                            selectedFile?.fileName === file.fileName ? 'text-blue-900' : 'text-stone-800'
+                            selectedFile?.fileName === file.fileName ? 'text-white' : 'text-stone-800'
                           }`}>
                             {file.fileName}
                           </p>
                           <p className={`text-xs mt-1 ${
-                            selectedFile?.fileName === file.fileName ? 'text-blue-600' : 'text-stone-500'
+                            selectedFile?.fileName === file.fileName ? 'text-gray-300' : 'text-stone-500'
                           }`}>
                             {new Date(file.uploadedAt).toLocaleDateString()} • {file.ext}
                           </p>
                         </div>
-                        {selectedFile?.fileName === file.fileName && (
-                          <div className="flex-shrink-0">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          </div>
-                        )}
                       </div>
                     </button>
                   ))}
@@ -159,68 +246,150 @@ export default function NewChatInterface({
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
-                  <h3 className="text-sm font-semibold text-stone-800 uppercase tracking-wide">Websites</h3>
+                  <h3 className="text-sm font-semibold text-stone-800 uppercase tracking-wide">Websites / YouTube Videos</h3>
                 </div>
-                <button
-                  onClick={() => setIsWebsiteModalOpen(true)}
-                  className="group p-2 text-stone-400 hover:text-green-600 hover:bg-green-50/50 rounded-lg transition-all duration-200"
-                  title="Add website"
-                >
-                  <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
+              </div>
+
+              {/* URL Input */}
+              <div className="mb-4">
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={websiteUrl}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setWebsiteUrl(value);
+
+                      // Real-time validation
+                      if (value.trim() && !isValidUrl(value)) {
+                        setUrlError('Please enter a valid URL');
+                      } else {
+                        setUrlError('');
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && websiteUrl.trim() && isValidUrl(websiteUrl)) {
+                        handleUrlSubmit();
+                      }
+                    }}
+                    placeholder="Enter website or YouTube URL..."
+                    className={`flex-1 px-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-1 placeholder-stone-400 transition-all ${
+                      urlError
+                        ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
+                        : 'border-stone-200/60 focus:ring-stone-400 focus:border-stone-400'
+                    }`}
+                  />
+                  <button
+                    onClick={handleUrlSubmit}
+                    disabled={!websiteUrl.trim() || !isValidUrl(websiteUrl) || isProcessingUrl}
+                    className="px-4 py-2 bg-stone-600 hover:bg-stone-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center space-x-2"
+                  >
+                    {isProcessingUrl ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <span>Add</span>
+                    )}
+                  </button>
+                </div>
+                {urlError && (
+                  <p className="text-xs text-red-500 mt-2 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {urlError}
+                  </p>
+                )}
               </div>
               
-              {uploadedFiles.filter(file => file.type === 'WEBSITE').length === 0 ? (
+              {uploadedFiles.filter(file => file.type === 'WEBSITE' || file.type === 'YOUTUBE_TRANSCRIPT').length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 mx-auto mb-3 bg-stone-100 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                     </svg>
                   </div>
-                  <p className="text-xs text-stone-500 font-medium">No websites yet</p>
-                  <p className="text-xs text-stone-400 mt-1">Add web content to search</p>
+                  <p className="text-xs text-stone-500 font-medium">No content yet</p>
+                  <p className="text-xs text-stone-400 mt-1">Add websites or YouTube videos to search</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {uploadedFiles.filter(file => file.type === 'WEBSITE').map(file => (
+                  {uploadedFiles.filter(file => file.type === 'WEBSITE' || file.type === 'YOUTUBE_TRANSCRIPT').map(file => (
                     <button
                       key={file.fileName}
                       onClick={() => onFileSelect(file)}
                       className={`group w-full text-left p-4 rounded-xl border transition-all duration-200 hover:shadow-sm ${
-                        selectedFile?.fileName === file.fileName 
-                          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200/60 shadow-md' 
+                        selectedFile && (
+                          selectedFile.fileName === file.fileName ||
+                          selectedFile.title === file.title ||
+                          (selectedFile.source === file.source && file.source)
+                        )
+                          ? 'bg-gradient-to-r from-gray-800 via-gray-700 to-stone-700 border-gray-600 shadow-md'
                           : 'bg-white border-stone-200/60 hover:bg-stone-50/50 hover:border-stone-300'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                          selectedFile?.fileName === file.fileName 
-                            ? 'bg-green-100 text-green-600' 
-                            : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
-                        }`}>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9 3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                          </svg>
+                        {/* Thumbnail or Icon */}
+                        <div className="relative">
+                          {file.thumbnail && (file.source?.includes('youtube.com') || file.source?.includes('youtu.be')) ? (
+                            <div className="w-10 h-10 rounded-lg overflow-hidden">
+                              <img
+                                src={file.thumbnail}
+                                alt={file.title || file.fileName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                              selectedFile && (
+                                selectedFile.fileName === file.fileName ||
+                                selectedFile.title === file.title ||
+                                (selectedFile.source === file.source && file.source)
+                              )
+                                ? 'bg-gray-600 text-white'
+                                : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
+                            }`}>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 2H3a1 1 0 00-1 1v18a1 1 0 001 1h18a1 1 0 001-1V3a1 1 0 00-1-1zM2 6h20M6 2v4m6-4v4m6-4v4" />
+                              </svg>
+                            </div>
+                          )}
+
+                          {/* YouTube indicator */}
+                          {file.source && (file.source.includes('youtube.com') || file.source.includes('youtu.be')) && (
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center">
+                              <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                              </svg>
+                            </div>
+                          )}
                         </div>
+
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-semibold truncate ${
-                            selectedFile?.fileName === file.fileName ? 'text-green-900' : 'text-stone-800'
+                            selectedFile && (
+                              selectedFile.fileName === file.fileName ||
+                              selectedFile.title === file.title ||
+                              (selectedFile.source === file.source && file.source)
+                            ) ? 'text-white' : 'text-stone-800'
                           }`}>
-                            {file.fileName}
+                            {file.title || file.fileName}
                           </p>
-                          <p className={`text-xs mt-1 ${
-                            selectedFile?.fileName === file.fileName ? 'text-green-600' : 'text-stone-500'
+                          <p className={`text-xs mt-1 truncate ${
+                            selectedFile && (
+                              selectedFile.fileName === file.fileName ||
+                              selectedFile.title === file.title ||
+                              (selectedFile.source === file.source && file.source)
+                            ) ? 'text-gray-300' : 'text-stone-500'
                           }`}>
-                            {new Date(file.uploadedAt).toLocaleDateString()} • Website
+                            {file.author || (file.source || 'Website')}
                           </p>
                         </div>
-                        {selectedFile?.fileName === file.fileName && (
-                          <div className="flex-shrink-0">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          </div>
-                        )}
                       </div>
                     </button>
                   ))}
@@ -230,12 +399,17 @@ export default function NewChatInterface({
 
             {/* Clear Selection */}
             {selectedFile && (
-              <button
-                onClick={() => onFileSelect(null)}
-                className="w-full p-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                ✕ Clear Selection
-              </button>
+              <div className="pt-4 border-t border-stone-200/60">
+                <button
+                  onClick={() => onFileSelect(null)}
+                  className="group w-full flex items-center justify-center p-3 text-sm text-red-500 hover:text-red-700 hover:bg-red-50/80 rounded-xl transition-all duration-200 border border-red-200/60 hover:border-red-300"
+                >
+                  <svg className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear Selection
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -337,24 +511,31 @@ export default function NewChatInterface({
         {/* Fixed Input Area - Always Visible */}
         <div className="px-6 py-6 pt-4">
           <div className="max-w-4xl mx-auto">
-            {/* Context Indicator */}
+          <div className="relative">
+            {/* Context Indicator inside input */}
             {selectedFile && (
-              <div className="text-xs text-blue-600 mb-2">
-                🔍 Searching in {selectedFile.fileName}
+              <div className="absolute top-3 left-6 z-10">
+                <div className="bg-stone-800 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1.5 shadow-sm">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <span>{selectedFile.title || selectedFile.fileName}</span>
+                </div>
               </div>
             )}
-          
-          <div className="relative">
+
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                selectedFile 
-                  ? `Ask about ${selectedFile.fileName}...`
+                selectedFile
+                  ? `Ask about ${selectedFile.title || selectedFile.fileName}...`
                   : "Ask ContextSearch anything..."
               }
-              className="w-full px-6 py-4 pr-16 bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 text-stone-900 placeholder-stone-400 resize-none transition-all shadow-sm"
+              className={`w-full px-6 bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 text-stone-900 placeholder-stone-400 resize-none transition-all shadow-sm ${
+                selectedFile ? 'pt-12 pb-4 pr-16' : 'py-4 pr-16'
+              }`}
               rows={3}
             />
 
