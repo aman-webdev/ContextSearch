@@ -33,7 +33,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-md mx-4 transform transition-all">
+      <div className="relative bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-lg mx-4 transform transition-all">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-stone-200">
           <h2 className="text-xl font-semibold text-stone-900">{title}</h2>
