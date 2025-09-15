@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import chat, { INIT_SYSTEM_PROMPT } from "@/lib/services/chat";
 import { queryVectorStore, queryVectorStoreWithFilter } from "@/lib/services/langchain";
 
@@ -58,6 +59,19 @@ ${contextContent}
 
         const chatResponse = await chat(query, [], SYSTEM_PROMPT)
 
+        await prisma.chat.createMany({
+            data : [
+                {
+                    role : "user",
+                    content : query
+                },
+                {
+                    role : "assistant",
+                    content : chatResponse || ''
+                }
+            ]
+        })
+
         return new Response(JSON.stringify({data: chatResponse}), { status: 200 });
 
     }
@@ -68,4 +82,9 @@ ${contextContent}
  
 
 
+}
+
+export const GET = async(request : Request) => {
+    const allChats = await prisma.chat.findMany()
+    return new Response(JSON.stringify({data : allChats}),{status: 200})
 }

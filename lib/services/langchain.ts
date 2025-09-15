@@ -28,7 +28,7 @@ export const loadDocument = async (pathToLoad: string) => {
     const additionalDocMetadata = {
       fileName : path.basename(pathToLoad),
       uploadedAt : Date.now(),
-      type : "DOCUMENT",
+      type : "FILE",
       ext : pathCompleteExtName(pathToLoad)
     }
     const loader = new PDFLoader(pathToLoad);
@@ -111,7 +111,7 @@ export const websiteLoader = async (url: string) => {
     const sourceData = websiteDocs[0].metadata
 
     const additionalWebsiteMetadata = {
-      websiteURL : url,
+      source : url,
       uploadedAt : Date.now(),
       type : "WEBSITE"
     }

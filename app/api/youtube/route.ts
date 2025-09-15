@@ -2,6 +2,7 @@ import { addDocumentToVectorStore, splitTextToChunks } from '@/lib/services/lang
 import { fetchTranscript } from 'youtube-transcript-plus';
 import { Document } from "@langchain/core/documents";
 import ytdl from "@distube/ytdl-core"
+import prisma from '@/lib/prisma';
 export const POST = async (request : Request) => {
     try{
 
@@ -42,9 +43,30 @@ export const POST = async (request : Request) => {
 
         await addDocumentToVectorStore(textChunks)
 
+         const result = await prisma.uploadedDocuments.create({
+        data: {
+            documentType : videoMetadata.type,
+            source : videoMetadata.source,
+            
+        }
+
+      
+    })
+
+      const videoResult = await prisma.video.create({
+            data: {
+                author : videoMetadata.author,
+                description : videoMetadata.description || '',
+                title : videoMetadata.title,
+                thumbnail : videoMetadata.thumbnail,
+                uploadedDocumentId : result.id
+
+            }
+        })
+
         return new Response(JSON.stringify({
             message: '',
-            data : videoMetadata
+            data : {...result , video : videoResult}
         }))
     }
     catch(err : any) {

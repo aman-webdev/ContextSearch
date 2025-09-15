@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import FileUpload from '../upload/FileUpload';
 import WebsiteInput from '../upload/WebsiteInput';
@@ -11,14 +11,24 @@ interface Message {
 }
 
 interface FileMetadata {
+  id: string;
   fileName: string;
-  uploadedAt: number;
-  type: "DOCUMENT" | "WEBSITE" | "YOUTUBE_TRANSCRIPT";
+  uploadedAt: string;
+  documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT";
   ext: string;
+  source: string;
   title?: string;
-  source?: string;
   thumbnail?: string;
   author?: string;
+  videoId?: string;
+  video?: {
+    id: string;
+    title: string;
+    description: string;
+    author: string;
+    thumbnail: string;
+    uploadedAt: string;
+  };
 }
 
 interface NewChatInterfaceProps {
@@ -32,6 +42,7 @@ interface NewChatInterfaceProps {
   uploadedFiles: FileMetadata[];
   selectedFile: FileMetadata | null;
   onFileSelect: (file: FileMetadata | null) => void;
+  isLoadingFiles?: boolean;
 }
 
 export default function NewChatInterface({
@@ -44,7 +55,8 @@ export default function NewChatInterface({
   uploadStatus,
   uploadedFiles,
   selectedFile,
-  onFileSelect
+  onFileSelect,
+  isLoadingFiles = false
 }: NewChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
@@ -52,6 +64,12 @@ export default function NewChatInterface({
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [urlError, setUrlError] = useState('');
   const [isProcessingUrl, setIsProcessingUrl] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   // Function to detect if URL is a YouTube video
   const isYouTubeUrl = (url: string) => {
@@ -108,18 +126,8 @@ export default function NewChatInterface({
         // Add YouTube video to the sidebar
         const responseData = await response.json();
         if (responseData.data) {
-          // Convert YouTube data to sidebar metadata format
-          const metadata = {
-            fileName: responseData.data.title,
-            uploadedAt: responseData.data.uploadedAt,
-            type: "YOUTUBE_TRANSCRIPT" as const,
-            ext: "youtube",
-            title: responseData.data.title,
-            source: responseData.data.source,
-            thumbnail: responseData.data.thumbnail,
-            author: responseData.data.author
-          };
-          onAddMetadata(metadata);
+          // Pass the full response data to onAddMetadata
+          onAddMetadata(responseData.data);
         }
       } else {
         // Send ONLY to website endpoint for regular URLs
@@ -160,7 +168,7 @@ export default function NewChatInterface({
   return (
     <div className="min-h-screen bg-stone-100 flex">
       {/* Sidebar */}
-      <div className="w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/60 flex flex-col">
+      <div className="fixed left-0 top-0 bottom-0 w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/60 flex flex-col z-20">
         {/* Sidebar Header */}
         <div className="px-6 py-5 border-b border-stone-200/60">
           <h2 className="text-lg font-semibold text-stone-800 flex items-center">
@@ -191,7 +199,17 @@ export default function NewChatInterface({
                 </button>
               </div>
               
-              {uploadedFiles.filter(file => file.type === 'DOCUMENT').length === 0 ? (
+              {isLoadingFiles ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-stone-100 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-stone-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <p className="text-xs text-stone-500 font-medium">Loading documents...</p>
+                </div>
+              ) : uploadedFiles.filter(file => file.documentType === 'FILE').length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 mx-auto mb-3 bg-stone-100 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,19 +221,19 @@ export default function NewChatInterface({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {uploadedFiles.filter(file => file.type === 'DOCUMENT').map(file => (
+                  {uploadedFiles.filter(file => file.documentType === 'FILE').map(file => (
                     <button
-                      key={file.fileName}
+                      key={file.id}
                       onClick={() => onFileSelect(file)}
                       className={`group w-full text-left p-4 rounded-xl border transition-all duration-200 hover:shadow-sm ${
-                        selectedFile?.fileName === file.fileName
+                        selectedFile?.id === file.id
                           ? 'bg-gradient-to-r from-gray-800 via-gray-700 to-stone-700 border-gray-600 shadow-md'
                           : 'bg-white border-stone-200/60 hover:bg-stone-50/50 hover:border-stone-300'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                          selectedFile?.fileName === file.fileName
+                          selectedFile?.id === file.id
                             ? 'bg-gray-600 text-white'
                             : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
                         }`}>
@@ -225,12 +243,12 @@ export default function NewChatInterface({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-semibold truncate ${
-                            selectedFile?.fileName === file.fileName ? 'text-white' : 'text-stone-800'
+                            selectedFile?.id === file.id ? 'text-white' : 'text-stone-800'
                           }`}>
                             {file.fileName}
                           </p>
                           <p className={`text-xs mt-1 ${
-                            selectedFile?.fileName === file.fileName ? 'text-gray-300' : 'text-stone-500'
+                            selectedFile?.id === file.id ? 'text-gray-300' : 'text-stone-500'
                           }`}>
                             {new Date(file.uploadedAt).toLocaleDateString()} • {file.ext}
                           </p>
@@ -307,7 +325,17 @@ export default function NewChatInterface({
                 )}
               </div>
               
-              {uploadedFiles.filter(file => file.type === 'WEBSITE' || file.type === 'YOUTUBE_TRANSCRIPT').length === 0 ? (
+              {isLoadingFiles ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-stone-100 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-stone-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <p className="text-xs text-stone-500 font-medium">Loading content...</p>
+                </div>
+              ) : uploadedFiles.filter(file => file.documentType === 'WEBSITE' || file.documentType === 'YOUTUBE_TRANSCRIPT').length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 mx-auto mb-3 bg-stone-100 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,16 +347,12 @@ export default function NewChatInterface({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {uploadedFiles.filter(file => file.type === 'WEBSITE' || file.type === 'YOUTUBE_TRANSCRIPT').map(file => (
+                  {uploadedFiles.filter(file => file.documentType === 'WEBSITE' || file.documentType === 'YOUTUBE_TRANSCRIPT').map(file => (
                     <button
-                      key={file.fileName}
+                      key={file.id}
                       onClick={() => onFileSelect(file)}
                       className={`group w-full text-left p-4 rounded-xl border transition-all duration-200 hover:shadow-sm ${
-                        selectedFile && (
-                          selectedFile.fileName === file.fileName ||
-                          selectedFile.title === file.title ||
-                          (selectedFile.source === file.source && file.source)
-                        )
+                        selectedFile?.id === file.id
                           ? 'bg-gradient-to-r from-gray-800 via-gray-700 to-stone-700 border-gray-600 shadow-md'
                           : 'bg-white border-stone-200/60 hover:bg-stone-50/50 hover:border-stone-300'
                       }`}
@@ -372,20 +396,12 @@ export default function NewChatInterface({
 
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm font-semibold truncate ${
-                            selectedFile && (
-                              selectedFile.fileName === file.fileName ||
-                              selectedFile.title === file.title ||
-                              (selectedFile.source === file.source && file.source)
-                            ) ? 'text-white' : 'text-stone-800'
+                            selectedFile?.id === file.id ? 'text-white' : 'text-stone-800'
                           }`}>
                             {file.title || file.fileName}
                           </p>
                           <p className={`text-xs mt-1 truncate ${
-                            selectedFile && (
-                              selectedFile.fileName === file.fileName ||
-                              selectedFile.title === file.title ||
-                              (selectedFile.source === file.source && file.source)
-                            ) ? 'text-gray-300' : 'text-stone-500'
+                            selectedFile?.id === file.id ? 'text-gray-300' : 'text-stone-500'
                           }`}>
                             {file.author || (file.source || 'Website')}
                           </p>
@@ -416,13 +432,13 @@ export default function NewChatInterface({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col ml-80">
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-4 bg-stone-50/80 border-b border-stone-200">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold text-stone-900">ContextSearch</h1>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
             Register
@@ -436,8 +452,8 @@ export default function NewChatInterface({
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {messages.length === 0 ? (
-            // Welcome Screen with Centered Input
-            <div className="flex-1 flex items-center justify-center px-8">
+            // Welcome Screen
+            <div className="flex-1 flex items-center justify-center px-8 pb-32">
               <div className="max-w-2xl w-full text-center space-y-8">
                 <div className="space-y-4">
                   <h2 className="text-3xl font-semibold text-stone-900">
@@ -446,49 +462,6 @@ export default function NewChatInterface({
                   <p className="text-lg text-stone-600">
                     Get instant answers from your documents and web content
                   </p>
-                </div>
-
-                {/* Centered Input Area */}
-                <div className="max-w-4xl mx-auto">
-                  <div className="relative">
-                    {/* Context Indicator inside input */}
-                    {selectedFile && (
-                      <div className="absolute top-3 left-6 z-10">
-                        <div className="bg-stone-800 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1.5 shadow-sm">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                          <span>{selectedFile.title || selectedFile.fileName}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <textarea
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder={
-                        selectedFile
-                          ? `Ask about ${selectedFile.title || selectedFile.fileName}...`
-                          : "Ask ContextSearch anything..."
-                      }
-                      className={`w-full px-6 bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 text-stone-900 placeholder-stone-400 resize-none transition-all shadow-sm ${
-                        selectedFile ? 'pt-12 pb-4 pr-16' : 'py-4 pr-16'
-                      }`}
-                      rows={3}
-                    />
-
-                    {/* Send Button */}
-                    <button
-                      onClick={handleSend}
-                      disabled={!input.trim() || isLoading}
-                      className="absolute right-4 bottom-4 p-2 bg-stone-200 hover:bg-stone-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-                    >
-                      <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
 
                 {/* Suggestion Chips */}
@@ -506,22 +479,22 @@ export default function NewChatInterface({
               </div>
             </div>
           ) : (
-            // Chat Messages
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            // Chat Messages - Scrollable Area with bottom padding for fixed input
+            <div className="flex-1 overflow-y-auto px-6 py-4 pb-40">
               <div className="max-w-3xl mx-auto space-y-4">
                 {messages.map((message, index) => (
-                  <div key={index} className="flex flex-col space-y-1">
+                  <div key={index} className="flex flex-col space-y-2">
                     {message.role === 'user' ? (
-                      // User Message - Minimal Design
+                      // User Message
                       <div className="flex justify-end">
-                        <div className="bg-stone-200 text-stone-900 px-4 py-3 rounded-3xl max-w-xs sm:max-w-md">
-                          <p className="text-sm">{message.content}</p>
+                        <div className="bg-stone-700 text-white px-5 py-3 rounded-2xl max-w-lg shadow-sm">
+                          <p className="text-sm leading-relaxed">{message.content}</p>
                         </div>
                       </div>
                     ) : (
-                      // Assistant Message - Clean Design
+                      // Assistant Message
                       <div className="flex justify-start">
-                        <div className="bg-white text-stone-900 px-4 py-3 rounded-3xl border border-stone-200 max-w-2xl">
+                        <div className="bg-white text-stone-900 px-5 py-4 rounded-2xl border border-stone-200 max-w-3xl shadow-sm">
                           <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                         </div>
                       </div>
@@ -531,71 +504,78 @@ export default function NewChatInterface({
 
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="bg-stone-800 px-4 py-3 rounded-3xl">
+                    <div className="bg-black text-white px-5 py-4 rounded-2xl shadow-sm">
                       <div className="flex items-center space-x-3">
                         <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-stone-300 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-stone-300 rounded-full animate-bounce delay-75"></div>
-                          <div className="w-2 h-2 bg-stone-300 rounded-full animate-bounce delay-150"></div>
+                          <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></div>
+                          <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></div>
                         </div>
-                        <span className="text-stone-300 text-sm">
-                          {selectedFile ? `Searching in ${selectedFile.fileName}...` : 'Thinking...'}
+                        <span className="text-white text-sm">
+                          {selectedFile ? `Searching in ${selectedFile.title || selectedFile.fileName}...` : 'Thinking...'}
                         </span>
                       </div>
                     </div>
                   </div>
                 )}
+
+                {/* Scroll anchor */}
+                <div ref={messagesEndRef} />
               </div>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Fixed Input Area - Only Visible When There Are Messages */}
-        {messages.length > 0 && (
-          <div className="px-6 py-6 pt-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="relative">
-                {/* Context Indicator inside input */}
-                {selectedFile && (
-                  <div className="absolute top-3 left-6 z-10">
-                    <div className="bg-stone-800 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1.5 shadow-sm">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <span>{selectedFile.title || selectedFile.fileName}</span>
-                    </div>
-                  </div>
-                )}
-
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    selectedFile
-                      ? `Ask about ${selectedFile.title || selectedFile.fileName}...`
-                      : "Ask ContextSearch anything..."
-                  }
-                  className={`w-full px-6 bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 text-stone-900 placeholder-stone-400 resize-none transition-all shadow-sm ${
-                    selectedFile ? 'pt-12 pb-4 pr-16' : 'py-4 pr-16'
-                  }`}
-                  rows={3}
-                />
-
-                {/* Send Button */}
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  className="absolute right-4 bottom-4 p-2 bg-stone-200 hover:bg-stone-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+      {/* Fixed Input Area at Bottom of Screen */}
+      <div className="fixed bottom-0 left-80 right-0 border-t border-stone-200 bg-stone-50/80 backdrop-blur-sm px-6 py-4 z-10">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative">
+            {/* Context Indicator above input */}
+            {selectedFile && (
+              <div className="mb-3">
+                <div className="inline-flex items-center px-3 py-2 bg-black text-white rounded-lg text-xs font-medium shadow-sm">
+                  <svg className="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                </button>
+                  <span className="truncate max-w-xs">Searching: {selectedFile.title || selectedFile.fileName}</span>
+                  <button
+                    onClick={() => onFileSelect(null)}
+                    className="ml-2 text-white/70 hover:text-white transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                selectedFile
+                  ? `Ask about ${selectedFile.title || selectedFile.fileName}...`
+                  : "Ask ContextSearch anything..."
+              }
+              className="w-full px-6 py-4 pr-16 bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 text-stone-900 placeholder-stone-400 resize-none transition-all shadow-sm"
+              rows={3}
+            />
+
+            {/* Send Button */}
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              className="absolute right-4 bottom-4 p-2 bg-stone-200 hover:bg-stone-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Modals */}
