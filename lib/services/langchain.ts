@@ -100,7 +100,7 @@ export const websiteLoader = async (url: string) => {
           { selector: "svg", format: "skip" }, // Also skip SVGs
         ],
       }),
-      maxDepth: 1,
+      maxDepth: 0,
       excludeDirs: ["/docs/api/"],
     });
 
