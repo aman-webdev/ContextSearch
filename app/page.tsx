@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import NewChatInterface from '../components/chat/NewChatInterface';
+import { authenticatedGet, authenticatedPost, authenticatedFormData } from '../lib/api';
 
 interface FileMetadata {
   id: string;
@@ -31,21 +32,65 @@ export default function Home() {
   const [uploadedFiles, setUploadedFiles] = useState<FileMetadata[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileMetadata | null>(null);
   const [isLoadingFiles, setIsLoadingFiles] = useState(true);
+  const [authToken, setAuthToken] = useState<string>('');
+  const [isInitializingAuth, setIsInitializingAuth] = useState(true);
 
-  // Fetch all data from database on component mount
+  // Initialize authentication on component mount
   useEffect(() => {
-    fetchAllData();
+    initializeAuth();
   }, []);
+
+  // Fetch data after auth is initialized
+  useEffect(() => {
+    if (authToken && !isInitializingAuth) {
+      fetchAllData();
+    }
+  }, [authToken, isInitializingAuth]);
+
+  const initializeAuth = async () => {
+    try {
+      setIsInitializingAuth(true);
+
+      // Check if token exists in localStorage
+      const existingToken = localStorage.getItem('authToken');
+
+      if (existingToken) {
+        // TODO: Add token validation/expiration check here
+        setAuthToken(existingToken);
+        console.log('Using existing token from localStorage');
+      } else {
+        // No token found, call /api/me to get guest session
+        console.log('No token found, creating guest session...');
+        const response = await fetch('/api/me');
+        const data = await response.json();
+
+        if (response.ok && data.data) {
+          const token = data.data;
+          localStorage.setItem('authToken', token);
+          setAuthToken(token);
+          console.log('Guest session created:', data.message);
+        } else {
+          console.error('Failed to create guest session:', data.message);
+          setUploadStatus('Failed to initialize session');
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing auth:', error);
+      setUploadStatus('Failed to initialize session');
+    } finally {
+      setIsInitializingAuth(false);
+    }
+  };
 
   const fetchAllData = async () => {
     try {
       setIsLoadingFiles(true);
 
-      // Fetch documents, videos, and chats in parallel
+      // Fetch documents, videos, and chats in parallel with auth headers
       const [documentsRes, videosRes, chatsRes] = await Promise.all([
-        fetch('/api/documents'),
-        fetch('/api/videos'),
-        fetch('/api/chat')
+        authenticatedGet('/api/documents'),
+        authenticatedGet('/api/videos'),
+        authenticatedGet('/api/chat')
       ]);
 
       const [documentsData, videosData, chatsData] = await Promise.all([
@@ -118,8 +163,6 @@ export default function Home() {
   };
 
   const handleSendMessage = async (input: string) => {
-    const userMessage = { role: 'user' as const, content: input };
-    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
@@ -140,19 +183,19 @@ export default function Home() {
           }
         })
       };
-      
+
       console.log('Frontend sending:', requestBody);
       console.log('Selected file:', selectedFile);
-      
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
+
+      const response = await authenticatedPost('/api/chat', requestBody);
 
       const data = await response.json();
-      
+
       if (response.ok) {
+        // Add user message first, then assistant response
+        const userMessage = { role: 'user' as const, content: input };
+        setMessages(prev => [...prev, userMessage]);
+
         // The API now returns both user and assistant messages
         if (data.data && Array.isArray(data.data)) {
           // If API returns array of messages, use them
@@ -166,10 +209,19 @@ export default function Home() {
           setMessages(prev => [...prev, { role: 'assistant', content: data.data }]);
         }
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.' }]);
+        // Don't add user message to chat if there's an error
+        // Show error as toast instead
+        if (response.status === 429 && data.limitReached) {
+          setUploadStatus(data.error); // Use existing toast system
+        } else {
+          setUploadStatus(data.error || 'Sorry, something went wrong.');
+        }
+        setTimeout(() => setUploadStatus(''), 5000);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.' }]);
+      // Don't add user message to chat if there's an error
+      setUploadStatus('Sorry, something went wrong.');
+      setTimeout(() => setUploadStatus(''), 5000);
     } finally {
       setIsLoading(false);
     }
@@ -183,10 +235,7 @@ export default function Home() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
+      const response = await authenticatedFormData('/api/upload', formData);
 
       const data = await response.json();
       console.log('Upload response:', data);
@@ -205,12 +254,18 @@ export default function Home() {
           video: data.data.video
         };
 
-        // Add to uploadedFiles and auto-select
-        setUploadedFiles(prev => [...prev, newFile]);
+        // Add to uploadedFiles at the top and auto-select
+        setUploadedFiles(prev => [newFile, ...prev]);
         setSelectedFile(newFile);
         setUploadStatus(data.message);
       } else {
-        setUploadStatus('Failed to upload file.');
+        const errorData = await response.json();
+        // Handle limit reached vs other errors
+        if (response.status === 429 && errorData.limitReached) {
+          setUploadStatus(errorData.error);
+        } else {
+          setUploadStatus(errorData.error || 'Failed to upload file.');
+        }
       }
     } catch (error) {
       setUploadStatus('Failed to upload file.');
@@ -236,7 +291,7 @@ export default function Home() {
       video: metadata.video
     };
 
-    setUploadedFiles(prev => [...prev, youtubeFile]);
+    setUploadedFiles(prev => [youtubeFile, ...prev]);
     setSelectedFile(youtubeFile);
     setUploadStatus(`${youtubeFile.title || youtubeFile.source} added successfully!`);
     setTimeout(() => setUploadStatus(''), 5000);
@@ -248,11 +303,7 @@ export default function Home() {
     setUploadStatus('Processing website...');
 
     try {
-      const response = await fetch('/api/website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
+      const response = await authenticatedPost('/api/website', { url });
 
       if (response.ok) {
         const data = await response.json();
@@ -269,14 +320,19 @@ export default function Home() {
             title: data.data.source
           };
 
-          setUploadedFiles(prev => [...prev, websiteFile]);
+          setUploadedFiles(prev => [websiteFile, ...prev]);
           setSelectedFile(websiteFile);
         }
 
         setUploadStatus(data.message || 'Website processed successfully!');
       } else {
-        const data = await response.json();
-        setUploadStatus(data.error || 'Failed to process website.');
+        const errorData = await response.json();
+        // Handle limit reached vs other errors
+        if (response.status === 429 && errorData.limitReached) {
+          setUploadStatus(errorData.error);
+        } else {
+          setUploadStatus(errorData.error || 'Failed to process website.');
+        }
       }
     } catch (error) {
       setUploadStatus('Failed to process website.');
@@ -284,6 +340,35 @@ export default function Home() {
 
     setTimeout(() => setUploadStatus(''), 5000);
   };
+
+  // Show loading state while initializing auth
+  if (isInitializingAuth) {
+    return (
+      <div className="min-h-screen w-full bg-stone-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-900 mx-auto mb-4"></div>
+          <p className="text-stone-600">Initializing session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if auth failed
+  if (!authToken) {
+    return (
+      <div className="min-h-screen w-full bg-stone-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to initialize session</p>
+          <button
+            onClick={initializeAuth}
+            className="px-4 py-2 bg-stone-600 text-white rounded hover:bg-stone-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-stone-100">

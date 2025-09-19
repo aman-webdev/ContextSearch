@@ -3,6 +3,19 @@ import { NextRequest } from "next/server";
 
 export const GET = async (request: NextRequest) => {
   try {
+    // Get user info from middleware
+    const userId = request.headers.get("x-user-id");
+
+    if (!userId) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Authentication required"
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type');
 
@@ -11,7 +24,8 @@ export const GET = async (request: NextRequest) => {
     if (type) {
       documents = await prisma.uploadedDocuments.findMany({
         where: {
-          documentType: type
+          documentType: type,
+          userId: userId  // Only get documents for this user
         },
         orderBy: {
           uploadedAt: 'desc'
@@ -22,6 +36,9 @@ export const GET = async (request: NextRequest) => {
       });
     } else {
       documents = await prisma.uploadedDocuments.findMany({
+        where: {
+          userId: userId  // Only get documents for this user
+        },
         orderBy: {
           uploadedAt: 'desc'
         },

@@ -8,6 +8,31 @@ import {
 
 export const POST = async (request: Request) => {
   try {
+    // Get user info from middleware
+    const userId = request.headers.get("x-user-id");
+    const userType = request.headers.get("x-user-type");
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+      });
+    }
+
+    // Check upload limits based on user type
+    const uploadLimit = userType === 'GUEST' ? 5 : 50;
+    const userUploadsCount = await prisma.uploadedDocuments.count({
+      where: { userId: userId }
+    });
+
+    if (userUploadsCount >= uploadLimit) {
+      return new Response(JSON.stringify({
+        error: `Upload limit reached (${uploadLimit} uploads). ${userType === 'GUEST' ? 'Please register for more uploads.' : ''}`,
+        limitReached: true
+      }), {
+        status: 429,
+      });
+    }
+
     const contentType = request.headers.get("content-type") || "";
 
     if (!contentType.includes("application/json")) {
@@ -40,6 +65,7 @@ export const POST = async (request: Request) => {
       data: {
         documentType: additionalWebsiteMetadata.type,
         source: additionalWebsiteMetadata.source,
+        userId: userId,
       },
     });
 

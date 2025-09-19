@@ -3,7 +3,25 @@ import { NextRequest } from "next/server";
 
 export const GET = async (request: NextRequest) => {
   try {
+    // Get user info from middleware
+    const userId = request.headers.get("x-user-id");
+
+    if (!userId) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Authentication required"
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const videos = await prisma.video.findMany({
+      where: {
+        uploadedDocument: {
+          userId: userId  // Only get videos for documents owned by this user
+        }
+      },
       orderBy: {
         uploadedAt: 'desc'
       },

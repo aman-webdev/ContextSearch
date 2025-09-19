@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import Modal from '../ui/Modal';
 import FileUpload from '../upload/FileUpload';
 import WebsiteInput from '../upload/WebsiteInput';
+import { authenticatedPost } from '../../lib/api';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -112,14 +114,16 @@ export default function NewChatInterface({
     try {
       if (isYouTubeUrl(websiteUrl)) {
         // Send ONLY to YouTube endpoint for YouTube URLs
-        const response = await fetch('/api/youtube', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: websiteUrl })
-        });
+        const response = await authenticatedPost('/api/youtube', { url: websiteUrl });
 
         if (!response.ok) {
-          setUrlError('Failed to process YouTube URL');
+          const errorData = await response.json();
+          // Handle limit reached vs other errors
+          if (response.status === 429 && errorData.limitReached) {
+            setUrlError(errorData.error);
+          } else {
+            setUrlError(errorData.error || 'Failed to process YouTube URL');
+          }
           return;
         }
 
@@ -440,12 +444,12 @@ export default function NewChatInterface({
         </div>
 
         <div className="flex items-center space-x-3">
-          <button className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
+          <Link href="/register" className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
             Register
-          </button>
-          <button className="px-4 py-2 text-gray-700 text-sm font-medium hover:text-gray-900 transition-colors">
+          </Link>
+          <Link href="/login" className="px-4 py-2 text-gray-700 text-sm font-medium hover:text-gray-900 transition-colors">
             Login
-          </button>
+          </Link>
         </div>
       </div>
 

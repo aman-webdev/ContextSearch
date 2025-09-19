@@ -14,30 +14,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Video{
-  id String @id @default(uuid())
-  title  String
-  description String
-  author String
-  thumbnail String
-  uploadedAt DateTime @default(now())
-  uploadedDocumentId String @unique
-  uploadedDocument UploadedDocuments @relation(fields: [uploadedDocumentId], references: [id])
+model Video {
+  id                 String            @id @default(uuid())
+  title              String
+  description        String
+  author             String
+  thumbnail          String
+  uploadedAt         DateTime          @default(now())
+  uploadedDocumentId String            @unique
+  uploadedDocument   UploadedDocuments @relation(fields: [uploadedDocumentId], references: [id])
 }
-
 
 model UploadedDocuments {
-  id String @id @default(uuid())
+  id           String   @id @default(uuid())
   documentType String
-  uploadedAt DateTime @default(now())
-  source String
-  ext String?
-  video Video?
+  uploadedAt   DateTime @default(now())
+  source       String
+  ext          String?
+  video        Video?
+  userId String
+  user  User @relation("UserUploadedDocuments",fields: [userId],references: [id])
 }
 
-
-model chat {
+model User {
   id String @id @default(uuid())
-  role String
-  content String
+  name String?
+  email String?
+  password String?
+  type String
+  createdAt DateTime @default(now())
+  sessionId String?
+  chatHistory Json[] @default([])  // Array of chat messages
+  uploadedDocuments UploadedDocuments[] @relation("UserUploadedDocuments")
 }
