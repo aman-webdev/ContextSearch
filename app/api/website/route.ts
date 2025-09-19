@@ -57,6 +57,7 @@ export const POST = async (request: Request) => {
     }
 
     const { websiteDocs, additionalWebsiteMetadata } = await websiteLoader(url);
+    console.log(additionalWebsiteMetadata,'add metadata')
     const websiteChunks = await splitTextToChunks(websiteDocs);
 
     await addDocumentToVectorStore(websiteChunks);
@@ -66,6 +67,7 @@ export const POST = async (request: Request) => {
         documentType: additionalWebsiteMetadata.type,
         source: additionalWebsiteMetadata.source,
         userId: userId,
+        title : additionalWebsiteMetadata.title
       },
     });
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Montserrat, Poppins } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   description: "Chat with your documents and websites using AI",
 };
 
+ const poppins = Montserrat({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-montserrat',
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
+}); 
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
       </body>

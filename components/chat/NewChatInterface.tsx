@@ -6,6 +6,9 @@ import Modal from '../ui/Modal';
 import FileUpload from '../upload/FileUpload';
 import WebsiteInput from '../upload/WebsiteInput';
 import { authenticatedPost } from '../../lib/api';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
 
 interface Message {
   role: 'user' | 'assistant';
@@ -68,7 +71,7 @@ export default function NewChatInterface({
   const [isProcessingUrl, setIsProcessingUrl] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
+  // Smooth auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
@@ -169,8 +172,10 @@ export default function NewChatInterface({
     "Compare multiple sources"
   ];
 
+
+
   return (
-    <div className="min-h-screen bg-stone-100 flex">
+    <div className={`min-h-screen bg-stone-100 flex ${inter.className}`}>
       {/* Sidebar */}
       <div className="fixed left-0 top-0 bottom-0 w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/60 flex flex-col z-20">
         {/* Sidebar Header */}
@@ -183,8 +188,9 @@ export default function NewChatInterface({
           </h2>
         </div>
         
+
         {/* Content Sections */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-stone-300 scrollbar-track-stone-100">
           <div className="p-5 space-y-6">
             {/* Uploaded Files Section */}
             <div>
@@ -192,15 +198,28 @@ export default function NewChatInterface({
                 <div className="flex items-center">
                   <h3 className="text-sm font-semibold text-stone-800 uppercase tracking-wide">Documents</h3>
                 </div>
-                <button
-                  onClick={() => setIsFileModalOpen(true)}
-                  className="group p-2 text-stone-400 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
-                  title="Upload document"
-                >
-                  <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
+                <div className="flex items-center space-x-2">
+                  {selectedFile && selectedFile.documentType === 'FILE' && (
+                    <button
+                      onClick={() => onFileSelect(null)}
+                      className="group flex items-center px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded text-xs transition-all duration-200"
+                    >
+                      <svg className="w-3 h-3 mr-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsFileModalOpen(true)}
+                    className="group p-2 text-stone-400 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
+                    title="Upload document"
+                  >
+                    <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               
               {isLoadingFiles ? (
@@ -225,11 +244,11 @@ export default function NewChatInterface({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {uploadedFiles.filter(file => file.documentType === 'FILE').map(file => (
+                  {uploadedFiles.filter(file => file.documentType === 'FILE').map((file) => (
                     <button
                       key={file.id}
                       onClick={() => onFileSelect(file)}
-                      className={`group w-full text-left p-4 rounded-xl border transition-all duration-200 hover:shadow-sm ${
+                      className={`group w-full text-left p-4 rounded-xl border transition-all duration-300 hover:shadow-sm animate-in slide-in-from-left-1 hover:scale-[1.02] ${
                         selectedFile?.id === file.id
                           ? 'bg-gradient-to-r from-gray-800 via-gray-700 to-stone-700 border-gray-600 shadow-md'
                           : 'bg-white border-stone-200/60 hover:bg-stone-50/50 hover:border-stone-300'
@@ -270,6 +289,17 @@ export default function NewChatInterface({
                 <div className="flex items-center">
                   <h3 className="text-sm font-semibold text-stone-800 uppercase tracking-wide">Websites / YouTube Videos</h3>
                 </div>
+                {selectedFile && (selectedFile.documentType === 'WEBSITE' || selectedFile.documentType === 'YOUTUBE_TRANSCRIPT') && (
+                  <button
+                    onClick={() => onFileSelect(null)}
+                    className="group flex items-center px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded text-xs transition-all duration-200"
+                  >
+                    <svg className="w-3 h-3 mr-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear
+                  </button>
+                )}
               </div>
 
               {/* URL Input */}
@@ -355,7 +385,7 @@ export default function NewChatInterface({
                     <button
                       key={file.id}
                       onClick={() => onFileSelect(file)}
-                      className={`group w-full text-left p-4 rounded-xl border transition-all duration-200 hover:shadow-sm ${
+                      className={`group w-full text-left p-4 rounded-xl border transition-all duration-300 hover:shadow-sm animate-in slide-in-from-left-1 hover:scale-[1.02] ${
                         selectedFile?.id === file.id
                           ? 'bg-gradient-to-r from-gray-800 via-gray-700 to-stone-700 border-gray-600 shadow-md'
                           : 'bg-white border-stone-200/60 hover:bg-stone-50/50 hover:border-stone-300'
@@ -407,7 +437,7 @@ export default function NewChatInterface({
                           <p className={`text-xs mt-1 truncate ${
                             selectedFile?.id === file.id ? 'text-gray-300' : 'text-stone-500'
                           }`}>
-                            {file.author || (file.source || 'Website')}
+                            {file.author || (file.documentType === 'WEBSITE' && file.source !== file.title ? file.source : (file.documentType === 'WEBSITE' ? 'Website' : file.source))}
                           </p>
                         </div>
                       </div>
@@ -417,20 +447,49 @@ export default function NewChatInterface({
               )}
             </div>
 
-            {/* Clear Selection */}
-            {selectedFile && (
-              <div className="pt-4 border-t border-stone-200/60">
-                <button
-                  onClick={() => onFileSelect(null)}
-                  className="group w-full flex items-center justify-center p-3 text-sm text-red-500 hover:text-red-700 hover:bg-red-50/80 rounded-xl transition-all duration-200 border border-red-200/60 hover:border-red-300"
-                >
-                  <svg className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Clear Selection
-                </button>
+          </div>
+        </div>
+
+        {/* Bottom Auth Section - Fixed */}
+        <div className="mt-auto border-t border-stone-200/60 bg-white/80 backdrop-blur-sm">
+          <div className="p-5 space-y-4">
+            {/* Guest User Limits */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-xl p-4">
+              <div className="flex items-center mb-2">
+                <svg className="w-4 h-4 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Guest User</p>
               </div>
-            )}
+              <p className="text-xs text-amber-700 leading-relaxed mb-3">
+                You have limited access. <span className="font-medium">10 messages</span> and <span className="font-medium">5 uploads</span> only.
+              </p>
+              <p className="text-xs text-amber-600 font-medium">
+                💾 Sign up to save your chats and get more access!
+              </p>
+            </div>
+
+            {/* Auth Buttons */}
+            <div className="space-y-2">
+              <Link
+                href="/register"
+                className="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-stone-800 to-stone-900 text-white rounded-xl text-sm font-semibold hover:from-stone-700 hover:to-stone-800 transition-all duration-200 border border-stone-700"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                Create Account
+              </Link>
+              <Link
+                href="/login"
+                className="w-full flex items-center justify-center px-4 py-3 bg-stone-100 text-stone-700 rounded-xl text-sm font-medium hover:bg-stone-200 transition-all duration-200 border border-stone-200"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Sign In
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -441,15 +500,6 @@ export default function NewChatInterface({
         <div className="flex items-center justify-between px-8 py-4 bg-stone-50/80 border-b border-stone-200">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold text-stone-900">ContextSearch</h1>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <Link href="/register" className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-            Register
-          </Link>
-          <Link href="/login" className="px-4 py-2 text-gray-700 text-sm font-medium hover:text-gray-900 transition-colors">
-            Login
-          </Link>
         </div>
       </div>
 
@@ -483,23 +533,29 @@ export default function NewChatInterface({
               </div>
             </div>
           ) : (
-            // Chat Messages - Scrollable Area with bottom padding for fixed input
-            <div className="flex-1 overflow-y-auto px-6 py-4 pb-40">
-              <div className="max-w-3xl mx-auto space-y-4">
+            // Chat Messages - Clean, Modern Design
+            <div className="flex-1 overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-stone-300 scrollbar-track-stone-100 px-6 py-6 pb-32">
+              <div className="max-w-4xl mx-auto">
                 {messages.map((message, index) => (
-                  <div key={index} className="flex flex-col space-y-2">
+                  <div key={index} className="mb-8">
                     {message.role === 'user' ? (
-                      // User Message
-                      <div className="flex justify-end">
-                        <div className="bg-stone-700 text-white px-5 py-3 rounded-2xl max-w-lg shadow-sm">
-                          <p className="text-sm leading-relaxed">{message.content}</p>
+                      // User Message - Light Neutral
+                      <div className="flex justify-end mb-4">
+                        <div className="relative">
+                          <div className="bg-gradient-to-br from-neutral-50 to-stone-50 text-stone-900 px-6 py-4 rounded-3xl rounded-br-lg max-w-2xl border border-neutral-200/60 shadow-sm">
+                            <p className="text-sm leading-relaxed font-medium text-stone-700">{message.content}</p>
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-to-br from-neutral-200 to-stone-200 rounded-full border border-white"></div>
                         </div>
                       </div>
                     ) : (
-                      // Assistant Message
+                      // Assistant Message - Dark Gradient
                       <div className="flex justify-start">
-                        <div className="bg-white text-stone-900 px-5 py-4 rounded-2xl border border-stone-200 max-w-3xl shadow-sm">
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                        <div className="relative">
+                          <div className="bg-gradient-to-br from-stone-700 via-stone-800 to-stone-900 text-white px-6 py-5 rounded-3xl rounded-bl-lg max-w-3xl border border-stone-600/30">
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap font-normal text-white">{message.content}</p>
+                          </div>
+                          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-stone-600 to-stone-800 rounded-full"></div>
                         </div>
                       </div>
                     )}
@@ -507,23 +563,25 @@ export default function NewChatInterface({
                 ))}
 
                 {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-black text-white px-5 py-4 rounded-2xl shadow-sm">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-75"></div>
-                          <div className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></div>
+                  <div className="flex justify-start mb-8 animate-in fade-in duration-300">
+                    <div className="relative">
+                      <div className="bg-gradient-to-br from-stone-700 via-stone-800 to-stone-900 text-white px-6 py-5 rounded-3xl rounded-bl-lg border border-stone-600/30">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex space-x-1.5">
+                            <div className="w-2.5 h-2.5 bg-gradient-to-r from-stone-300 to-stone-400 rounded-full animate-bounce"></div>
+                            <div className="w-2.5 h-2.5 bg-gradient-to-r from-stone-300 to-stone-400 rounded-full animate-bounce delay-75"></div>
+                            <div className="w-2.5 h-2.5 bg-gradient-to-r from-stone-300 to-stone-400 rounded-full animate-bounce delay-150"></div>
+                          </div>
+                          <span className="text-stone-200 text-sm font-medium">
+                            {selectedFile ? `Searching in ${selectedFile.title || selectedFile.fileName}...` : 'Thinking...'}
+                          </span>
                         </div>
-                        <span className="text-white text-sm">
-                          {selectedFile ? `Searching in ${selectedFile.title || selectedFile.fileName}...` : 'Thinking...'}
-                        </span>
                       </div>
+                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-stone-600 to-stone-800 rounded-full"></div>
                     </div>
                   </div>
                 )}
 
-                {/* Scroll anchor */}
                 <div ref={messagesEndRef} />
               </div>
             </div>
@@ -531,52 +589,69 @@ export default function NewChatInterface({
         </div>
       </div>
 
-      {/* Fixed Input Area at Bottom of Screen */}
-      <div className="fixed bottom-0 left-80 right-0 border-t border-stone-200 bg-stone-50/80 backdrop-blur-sm px-6 py-4 z-10">
+      {/* Fixed Input Area - Clean Design */}
+      <div className="fixed bottom-0 left-80 right-0 border-t border-gray-200 bg-white px-6 py-4 z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="relative">
-            {/* Context Indicator above input */}
-            {selectedFile && (
-              <div className="mb-3">
-                <div className="inline-flex items-center px-3 py-2 bg-black text-white rounded-lg text-xs font-medium shadow-sm">
-                  <svg className="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          {/* Context Indicator */}
+          {selectedFile && (
+            <div className="mb-4">
+              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-stone-100 to-stone-200 text-stone-700 rounded-full text-sm border border-stone-300/40">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="truncate max-w-xs font-medium">{selectedFile.title || selectedFile.fileName}</span>
+                <button
+                  onClick={() => onFileSelect(null)}
+                  className="ml-2 text-stone-500 hover:text-stone-700 transition-colors"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  <span className="truncate max-w-xs">Searching: {selectedFile.title || selectedFile.fileName}</span>
-                  <button
-                    onClick={() => onFileSelect(null)}
-                    className="ml-2 text-white/70 hover:text-white transition-colors"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
+          <div className="flex items-end space-x-3">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
                 selectedFile
-                  ? `Ask about ${selectedFile.title || selectedFile.fileName}...`
-                  : "Ask ContextSearch anything..."
+                  ? `Ask about ${(selectedFile.title || selectedFile.fileName || '').slice(0, 30)}${(selectedFile.title || selectedFile.fileName || '').length > 30 ? '...' : ''}...`
+                  : "Type a message..."
               }
-              className="w-full px-6 py-4 pr-16 bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 text-stone-900 placeholder-stone-400 resize-none transition-all shadow-sm"
-              rows={3}
+              className="flex-1 px-6 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-400 focus:border-stone-400 resize-none overflow-hidden break-words text-base"
+              rows={2}
+              style={{
+                minHeight: '60px',
+                maxHeight: '160px',
+                lineHeight: '1.5',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}
             />
 
-            {/* Send Button */}
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="absolute right-4 bottom-4 p-2 bg-stone-200 hover:bg-stone-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+              className={`p-4 rounded-xl transition-colors ${
+                !input.trim() || isLoading
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-stone-600 hover:bg-stone-700 text-white'
+              }`}
             >
-              <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
+              {isLoading ? (
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              )}
             </button>
           </div>
         </div>

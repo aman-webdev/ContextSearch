@@ -115,12 +115,12 @@ export default function Home() {
       if (documentsData.success) {
         const transformedDocs = documentsData.data.map((doc: any) => ({
           id: doc.id,
-          fileName: doc.source,
+          fileName: doc.title || doc.video?.title || doc.source,
           uploadedAt: doc.uploadedAt,
           documentType: doc.documentType,
           ext: doc.ext || '',
           source: doc.source,
-          title: doc.video?.title || doc.source,
+          title: doc.title || doc.video?.title || doc.source,
           thumbnail: doc.video?.thumbnail,
           author: doc.video?.author,
           videoId: doc.videoId,
@@ -163,6 +163,10 @@ export default function Home() {
   };
 
   const handleSendMessage = async (input: string) => {
+    // Add user message first, before making the API call
+    const userMessage = { role: 'user' as const, content: input };
+    setMessages(prev => [...prev, userMessage]);
+
     setIsLoading(true);
 
     try {
@@ -192,24 +196,22 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) {
-        // Add user message first, then assistant response
-        const userMessage = { role: 'user' as const, content: input };
-        setMessages(prev => [...prev, userMessage]);
 
-        // The API now returns both user and assistant messages
+        // Handle API response - only add assistant message since user message is already added
         if (data.data && Array.isArray(data.data)) {
-          // If API returns array of messages, use them
-          const newMessages = data.data.map((msg: any) => ({
+          // If API returns array of messages, only add assistant messages
+          const assistantMessages = data.data.filter((msg: any) => msg.role === 'assistant').map((msg: any) => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content
           }));
-          setMessages(prev => [...prev, ...newMessages.slice(1)]); // Skip user message since we already added it
+          setMessages(prev => [...prev, ...assistantMessages]);
         } else {
           // Fallback: if API returns single response, treat as assistant message
           setMessages(prev => [...prev, { role: 'assistant', content: data.data }]);
         }
       } else {
-        // Don't add user message to chat if there's an error
+        // Remove the user message we just added since there was an error
+        setMessages(prev => prev.slice(0, -1));
         // Show error as toast instead
         if (response.status === 429 && data.limitReached) {
           setUploadStatus(data.error); // Use existing toast system
@@ -219,7 +221,8 @@ export default function Home() {
         setTimeout(() => setUploadStatus(''), 5000);
       }
     } catch (error) {
-      // Don't add user message to chat if there's an error
+      // Remove the user message we just added since there was an error
+      setMessages(prev => prev.slice(0, -1));
       setUploadStatus('Sorry, something went wrong.');
       setTimeout(() => setUploadStatus(''), 5000);
     } finally {
@@ -312,12 +315,12 @@ export default function Home() {
         if (data.data) {
           const websiteFile: FileMetadata = {
             id: data.data.id,
-            fileName: data.data.source,
+            fileName: data.data.title || data.data.source,
             uploadedAt: data.data.uploadedAt,
             documentType: data.data.documentType,
             ext: data.data.ext || '',
             source: data.data.source,
-            title: data.data.source
+            title: data.data.title || data.data.source
           };
 
           setUploadedFiles(prev => [websiteFile, ...prev]);
