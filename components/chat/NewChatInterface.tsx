@@ -692,10 +692,10 @@ export default function NewChatInterface({
                       // Assistant Message - Dark Gradient
                       <div className="flex justify-start">
                         <div className="relative">
-                          <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-black text-white px-6 py-5 rounded-3xl rounded-bl-lg max-w-3xl border border-slate-800/40 shadow-xl">
+                          <div className="bg-gradient-to-br from-neutral-800 via-neutral-900 to-black text-white px-6 py-5 rounded-3xl rounded-bl-lg max-w-3xl border border-neutral-700/50 shadow-xl">
                             <p className="text-sm leading-relaxed whitespace-pre-wrap font-normal text-white">{message.content}</p>
                           </div>
-                          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-slate-800 to-black rounded-full"></div>
+                          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-neutral-700 to-black rounded-full"></div>
                         </div>
                       </div>
                     )}
@@ -705,7 +705,7 @@ export default function NewChatInterface({
                 {isLoading && (
                   <div className="flex justify-start mb-8 animate-in fade-in duration-300">
                     <div className="relative">
-                      <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-black text-white px-6 py-5 rounded-3xl rounded-bl-lg border border-slate-800/40 shadow-xl">
+                      <div className="bg-gradient-to-br from-neutral-800 via-neutral-900 to-black text-white px-6 py-5 rounded-3xl rounded-bl-lg border border-neutral-700/50 shadow-xl">
                         <div className="flex items-center space-x-4">
                           <div className="flex space-x-1.5">
                             <div className="w-2.5 h-2.5 bg-gradient-to-r from-stone-300 to-stone-400 rounded-full animate-bounce"></div>
@@ -717,7 +717,7 @@ export default function NewChatInterface({
                           </span>
                         </div>
                       </div>
-                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-slate-800 to-black rounded-full"></div>
+                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-neutral-700 to-black rounded-full"></div>
                     </div>
                   </div>
                 )}
