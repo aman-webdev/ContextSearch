@@ -74,7 +74,7 @@ export default function Home() {
             console.log('Existing token invalid, getting fresh token...');
             localStorage.removeItem('authToken');
           }
-        } catch (tokenTestError) {
+        } catch (tokenTestError: unknown) {
           console.log('Error validating token, getting fresh token...');
           localStorage.removeItem('authToken');
         }
@@ -121,7 +121,7 @@ export default function Home() {
 
       // Load existing chats if available
       if (chatsData.data && chatsData.data.length > 0) {
-        const formattedMessages = chatsData.data.map((chat: any) => ({
+        const formattedMessages = chatsData.data.map((chat: {role: string; content: string}) => ({
           role: chat.role as 'user' | 'assistant',
           content: chat.content
         }));
@@ -133,7 +133,16 @@ export default function Home() {
 
       // Add documents
       if (documentsData.success) {
-        const transformedDocs = documentsData.data.map((doc: any) => ({
+        const transformedDocs = documentsData.data.map((doc: {
+          id: string;
+          title?: string;
+          video?: {title: string; thumbnail: string; author: string; uploadedAt: string; id: string; description: string};
+          source: string;
+          uploadedAt: string;
+          documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT" | "SUBTITLE";
+          ext?: string;
+          videoId?: string;
+        }) => ({
           id: doc.id,
           fileName: doc.title || doc.video?.title || doc.source,
           uploadedAt: doc.uploadedAt,
@@ -152,8 +161,8 @@ export default function Home() {
       // Add videos (those not already linked to documents)
       if (videosData.success) {
         const transformedVideos = videosData.data
-          .filter((video: any) => !video.uploadedDocument) // Only unlinked videos
-          .map((video: any) => ({
+          .filter((video: {uploadedDocument?: unknown; id: string; title: string; uploadedAt: string; thumbnail: string; author: string}) => !video.uploadedDocument) // Only unlinked videos
+          .map((video: {id: string; title: string; uploadedAt: string; thumbnail: string; author: string}) => ({
             id: video.id,
             fileName: video.title,
             uploadedAt: video.uploadedAt,
@@ -220,7 +229,7 @@ export default function Home() {
         // Handle API response - only add assistant message since user message is already added
         if (data.data && Array.isArray(data.data)) {
           // If API returns array of messages, only add assistant messages
-          const assistantMessages = data.data.filter((msg: any) => msg.role === 'assistant').map((msg: any) => ({
+          const assistantMessages = data.data.filter((msg: {role: string; content: string}) => msg.role === 'assistant').map((msg: {role: string; content: string}) => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content
           }));
@@ -326,7 +335,16 @@ export default function Home() {
 
       if (response.ok) {
         // Transform the backend response to match our interface
-        const newFiles: FileMetadata[] = data.results.map((result: any) => ({
+        const newFiles: FileMetadata[] = data.results.map((result: {
+          data: {
+            id: string;
+            source: string;
+            uploadedAt: string;
+            documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT" | "SUBTITLE";
+            ext?: string;
+            title?: string;
+          }
+        }) => ({
           id: result.data.id,
           fileName: result.data.source,
           uploadedAt: result.data.uploadedAt,
@@ -369,7 +387,21 @@ export default function Home() {
   };
 
   // Function to handle adding metadata directly (for YouTube)
-  const handleAddMetadata = (metadata: any) => {
+  const handleAddMetadata = (metadata: {
+    id: string;
+    source: string;
+    uploadedAt: string;
+    documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT" | "SUBTITLE";
+    ext?: string;
+    video?: {
+      id: string;
+      title: string;
+      description: string;
+      author: string;
+      thumbnail: string;
+      uploadedAt: string;
+    };
+  }) => {
     // Transform the YouTube data to match our interface
     const youtubeFile: FileMetadata = {
       id: metadata.id,
