@@ -17,6 +17,7 @@ const embeddings = new OpenAIEmbeddings({
 const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
   url: process.env.QDRANT_URL,
   collectionName: "uploaded_files",
+  apiKey : process.env.QDRANT_API_KEY
 });
 
 const vectorStoreRetriever = vectorStore.asRetriever({ k: 2 });
