@@ -65,7 +65,7 @@ export const POST = async (request: Request) => {
     const hypotheticalDoc = await prepareDoc(refinedQuery || '')
 
     const retreivedDocs = additionalMetadata
-      ? await queryVectorStoreWithFilter(hypotheticalDoc || query, additionalMetadata)
+      ? await queryVectorStoreWithFilter(hypotheticalDoc || query, additionalMetadata as unknown as Record<string, unknown>)
       : await queryVectorStore(hypotheticalDoc || query);
 
     // Format retrieved documents properly

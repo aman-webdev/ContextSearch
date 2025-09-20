@@ -8,6 +8,7 @@ interface AuthResult {
     type: string;
     sessionId?: string;
     email?: string;
+
   };
   error?: string;
 }
@@ -46,7 +47,7 @@ export async function authenticateRequest(request: Request): Promise<AuthResult>
       success: true,
       user: {
         id: user.id,
-        userType: user.type,
+        type: user.type,
         sessionId: user.sessionId || undefined,
         email: user.email || undefined
       }

@@ -74,7 +74,7 @@ export default function Home() {
             console.log('Existing token invalid, getting fresh token...');
             localStorage.removeItem('authToken');
           }
-        } catch (tokenTestError: unknown) {
+        } catch {
           console.log('Error validating token, getting fresh token...');
           localStorage.removeItem('authToken');
         }
@@ -249,7 +249,7 @@ export default function Home() {
         }
         setTimeout(() => setUploadStatus(''), 5000);
       }
-    } catch (error) {
+    } catch {
       // Remove the user message we just added since there was an error
       setMessages(prev => prev.slice(0, -1));
       setUploadStatus('Sorry, something went wrong.');
@@ -461,7 +461,7 @@ export default function Home() {
           setUploadStatus(errorData.error || 'Failed to process website.');
         }
       }
-    } catch (error) {
+    } catch {
       setUploadStatus('Failed to process website.');
     } finally {
       setIsWebsiteProcessing(false);

@@ -19,7 +19,7 @@ export default function FileUpload({ onUpload, status, isUploading = false }: Fi
   const validateFile = (file: File): boolean => {
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     const isValidExtension = allowedTypes.includes(fileExtension);
-    const isValidMimeType = allowedMimeTypes.includes(file.type) || file.type === '';
+    // const isValidMimeType = allowedMimeTypes.includes(file.type) || file.type === '';
 
     if (!isValidExtension) {
       setFileError('Only PDF files are allowed. Use the subtitle upload for SRT/VTT files.');
