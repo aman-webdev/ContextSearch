@@ -24,7 +24,22 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  output: 'standalone'
+  output: 'standalone',
+  outputFileTracingExcludes: {
+    '/*': [
+      '.pnpm-store/**/*',
+      'node_modules/.pnpm/**/*',
+      '.pnpm/**/*',
+      '**/node_modules/.pnpm/**/*',
+    ],
+    '/api/*': [
+      '.pnpm-store/**/*',
+      'node_modules/.pnpm/**/*',
+      '.pnpm/**/*',
+      'lib/generated/prisma/libquery_engine-darwin-arm64.dylib.node',
+      'lib/generated/prisma/query_engine_bg.wasm'
+    ]
+  }
 };
 
 export default nextConfig;
