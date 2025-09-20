@@ -14,13 +14,13 @@ const embeddings = new OpenAIEmbeddings({
  
 });
 
-const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-  url: process.env.QDRANT_URL,
-  collectionName: "uploaded_files",
-  apiKey : process.env.QDRANT_API_KEY
-});
-
-const vectorStoreRetriever = vectorStore.asRetriever({ k: 2 });
+const getVectorStore = async () => {
+  return await QdrantVectorStore.fromExistingCollection(embeddings, {
+    url: process.env.QDRANT_URL,
+    collectionName: "uploaded_files",
+    apiKey: process.env.QDRANT_API_KEY
+  });
+};
 
 // TODO: modify this for other file types too
 export const loadDocument = async (pathToLoad: string) => {
@@ -63,6 +63,7 @@ export const addDocumentToVectorStore = async (docs: Document<Record<string, unk
 
     console.log(`addDocumentToVectorStore: Adding document to vector store`);
 
+    const vectorStore = await getVectorStore();
     await vectorStore.addDocuments(docs)
     console.log(`addDocumentToVectorStore: Document added to vector store`);
   } catch (err) {
@@ -76,6 +77,8 @@ export const addDocumentToVectorStore = async (docs: Document<Record<string, unk
 
 export const queryVectorStore = async (query: string) => {
   try {
+    const vectorStore = await getVectorStore();
+    const vectorStoreRetriever = vectorStore.asRetriever({ k: 2 });
     const retreivedDocs = await vectorStoreRetriever.invoke(query);
     return retreivedDocs;
   } catch (err) {
@@ -94,6 +97,7 @@ export const queryVectorStoreWithFilter = async (query: string, metadata: Record
       match: { value }
     }));
     
+    const vectorStore = await getVectorStore();
     const retreivedDocs = await vectorStore.similaritySearch(query, 10, {
       must: filterConditions
     });
