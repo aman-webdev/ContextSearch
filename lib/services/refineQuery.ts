@@ -2,7 +2,7 @@
 import { createLLMClient } from "../agent/client";
 import LLMConfig from "@/config.json"
 
-const retrievalClient = createLLMClient("gemini")
+const retrievalClient = createLLMClient("openai")
 
 const REFINE_USER_QUERY_PROMPT = `
 You are an assistant whose main purpose is to refine the user query to make LLMs understand it better using your pre-trained data. 
@@ -17,7 +17,7 @@ Assistant : How do i debug in Node.js
 export const refineUserQuery = async (query : string) => {
     try{
         const response = await retrievalClient.chat.completions.create({
-            model : LLMConfig['gemini'].model,
+            model : LLMConfig['openai'].model,
             messages : [
                 {
                     role : "system",
