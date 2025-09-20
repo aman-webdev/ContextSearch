@@ -19,7 +19,7 @@ export const POST = async (request: Request) => {
     }
 
     // Check upload limits based on user type
-    const uploadLimit = userType === 'GUEST' ? 5 : 50;
+    const uploadLimit = userType === 'GUEST' ? 15 : 50;
     const userUploadsCount = await prisma.uploadedDocuments.count({
       where: { userId: userId }
     });
@@ -54,6 +54,21 @@ export const POST = async (request: Request) => {
       return new Response(JSON.stringify({ error: "Invalid URL" }), {
         status: 400,
       });
+    }
+
+    // Check if website already exists for this user
+    const existingWebsite = await prisma.uploadedDocuments.findFirst({
+      where: {
+        userId: userId,
+        source: url,
+        documentType: 'WEBSITE'
+      }
+    });
+
+    if (existingWebsite) {
+      return new Response(JSON.stringify({
+        error: `Website "${url}" already exists. This URL has already been processed.`
+      }), { status: 409 });
     }
 
     const { websiteDocs, additionalWebsiteMetadata } = await websiteLoader(url);

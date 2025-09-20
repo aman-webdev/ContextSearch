@@ -5,11 +5,30 @@ import { useState, useRef, DragEvent } from 'react';
 interface FileUploadProps {
   onUpload: (file: File) => void;
   status: string;
+  isUploading?: boolean;
 }
 
-export default function FileUpload({ onUpload, status }: FileUploadProps) {
+export default function FileUpload({ onUpload, status, isUploading = false }: FileUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileError, setFileError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const allowedTypes = ['.pdf'];
+  const allowedMimeTypes = ['application/pdf'];
+
+  const validateFile = (file: File): boolean => {
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const isValidExtension = allowedTypes.includes(fileExtension);
+    const isValidMimeType = allowedMimeTypes.includes(file.type) || file.type === '';
+
+    if (!isValidExtension) {
+      setFileError('Only PDF files are allowed. Use the subtitle upload for SRT/VTT files.');
+      return false;
+    }
+
+    setFileError('');
+    return true;
+  };
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -24,18 +43,26 @@ export default function FileUpload({ onUpload, status }: FileUploadProps) {
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      onUpload(files[0]);
+      const file = files[0];
+      if (validateFile(file)) {
+        onUpload(file);
+      }
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      onUpload(files[0]);
+      const file = files[0];
+      if (validateFile(file)) {
+        onUpload(file);
+      }
     }
+    // Reset the input value to allow selecting the same file again
+    e.target.value = '';
   };
 
   const openFileDialog = () => {
@@ -45,14 +72,18 @@ export default function FileUpload({ onUpload, status }: FileUploadProps) {
   return (
     <div className="space-y-6">
       <div
-        onClick={openFileDialog}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onClick={isUploading ? undefined : openFileDialog}
+        onDragOver={isUploading ? undefined : handleDragOver}
+        onDragLeave={isUploading ? undefined : handleDragLeave}
+        onDrop={isUploading ? undefined : handleDrop}
         className={`
-          relative group border border-stone-200 rounded-lg bg-white hover:bg-stone-50/50
-          transition-all duration-200 cursor-pointer overflow-hidden
-          ${isDragOver ? 'border-blue-300 bg-blue-50/30' : 'hover:border-stone-300'}
+          relative group border border-stone-200 rounded-lg bg-white transition-all duration-200 overflow-hidden
+          ${isUploading
+            ? 'cursor-not-allowed opacity-60'
+            : 'cursor-pointer hover:bg-stone-50/50'
+          }
+          ${isDragOver && !isUploading ? 'border-blue-300 bg-blue-50/30' : 'hover:border-stone-300'}
+          ${isUploading ? 'border-stone-200' : ''}
         `}
       >
         {/* Background Pattern */}
@@ -109,7 +140,7 @@ export default function FileUpload({ onUpload, status }: FileUploadProps) {
                   Drag and drop or <span className="text-stone-800 font-medium underline underline-offset-2">click to browse</span>
                 </p>
                 <p className="text-sm text-stone-500">
-                  PDF, TXT, DOCX and more formats supported
+                  PDF files supported
                 </p>
               </div>
             </div>
@@ -117,13 +148,7 @@ export default function FileUpload({ onUpload, status }: FileUploadProps) {
             {/* Feature pills */}
             <div className="flex gap-2 flex-wrap justify-center">
               <span className="px-3 py-1 bg-stone-100 text-stone-600 rounded-full text-xs font-medium">
-                PDF
-              </span>
-              <span className="px-3 py-1 bg-stone-100 text-stone-600 rounded-full text-xs font-medium">
-                DOCX
-              </span>
-              <span className="px-3 py-1 bg-stone-100 text-stone-600 rounded-full text-xs font-medium">
-                TXT
+                PDF Documents
               </span>
             </div>
           </div>
@@ -134,9 +159,18 @@ export default function FileUpload({ onUpload, status }: FileUploadProps) {
           type="file"
           className="hidden"
           onChange={handleFileSelect}
-          accept=".pdf,.txt,.docx,.doc"
+          accept=".pdf"
         />
       </div>
+
+      {fileError && (
+        <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-red-700 bg-red-50 border-red-200">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{fileError}</span>
+        </div>
+      )}
 
       {status && (
         <div className={`

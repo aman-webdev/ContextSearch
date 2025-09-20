@@ -6,6 +6,7 @@ import {
   queryVectorStoreWithFilter,
 } from "@/lib/services/langchain";
 import { refineUserQuery } from "@/lib/services/refineQuery";
+import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 
 interface AdditionalMetadata {
   fileName: string;
@@ -47,9 +48,8 @@ export const POST = async (request: Request) => {
 
     // Check message limits based on user type
     const currentChatHistory = Array.isArray(user.chatHistory) ? user.chatHistory : [];
-    const messageLimit = user.type === 'GUEST' ? 10 : 50;
+    const messageLimit = user.type === 'GUEST' ? 100 : 50;
 
-    console.log(currentChatHistory.length,'cur chat')
 
     if (currentChatHistory.length  >= messageLimit) {
       return new Response(JSON.stringify({
@@ -74,27 +74,24 @@ export const POST = async (request: Request) => {
         const metadata = doc.metadata;
         const content = doc.pageContent;
 
-        let sourceInfo = "";
-        if (metadata.type === "DOCUMENT") {
-          sourceInfo = `[Document: ${metadata.fileName}]`;
-        } else if (metadata.type === "WEBSITE") {
-          sourceInfo = `[Website: ${metadata.source || metadata.websiteURL}]`;
-        } else if (metadata.type === "YOUTUBE_TRANSCRIPT") {
-          sourceInfo = `[YouTube: ${metadata.title} - ${metadata.source}]`;
-        }
-
-        return `${sourceInfo}\n${content}\n`;
+      
+        return `Metadata : ${JSON.stringify(metadata)} Content : \n${content}\n`;
       })
       .join("\n---\n");
+
+      console.log(contextContent,'context here')
 
     const SYSTEM_PROMPT = `${INIT_SYSTEM_PROMPT}
 
     ## Context Documents:
     ${contextContent}
+    
 `;
+
+
    
 
-    const chatResponse = await chat( refinedQuery || query, [], SYSTEM_PROMPT);
+    const chatResponse = await chat( refinedQuery || query, currentChatHistory.flat() as unknown as ChatCompletionMessageParam[] , SYSTEM_PROMPT);
 
    
 
@@ -112,7 +109,7 @@ export const POST = async (request: Request) => {
       }
     ];
 
-    await prisma.user.update({
+      await prisma.user.update({
       where: { id: userId },
       data: {
         chatHistory: {

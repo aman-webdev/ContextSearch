@@ -92,7 +92,40 @@ export async function authenticatedFormData(url: string, formData: FormData) {
     body: formData
   });
 
+  // Handle auth errors with token refresh logic
   if (response.status === 401) {
+    const errorData = await response.json().catch(() => ({}));
+
+    // Check if it's an expired token
+    if (errorData.expired) {
+      console.log('Token expired during upload, getting fresh token...');
+      localStorage.removeItem('authToken');
+
+      try {
+        // Try to get a fresh token
+        const meResponse = await fetch('/api/me');
+        const meData = await meResponse.json();
+
+        if (meResponse.ok && meData.data) {
+          // Store new token
+          localStorage.setItem('authToken', meData.data);
+
+          // Retry the original request with new token
+          const retryHeaders = new Headers();
+          retryHeaders.set('Authorization', `Bearer ${meData.data}`);
+
+          return fetch(url, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: formData
+          });
+        }
+      } catch (refreshError) {
+        console.error('Failed to refresh token during upload:', refreshError);
+      }
+    }
+
+    // If we can't refresh or it's not expired, clear token and throw error
     localStorage.removeItem('authToken');
     throw new Error('Authentication failed. Please refresh the page.');
   }

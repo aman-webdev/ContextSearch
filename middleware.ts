@@ -12,6 +12,9 @@ const authRules: Record<string, Record<string, boolean>> = {
     '/api/upload': {
         'POST': true     // Auth required - upload files (check limits)
     },
+    '/api/subtitles': {
+        'POST': true     // Auth required - upload subtitle files (check limits)
+    },
     '/api/website': {
         'POST': true     // Auth required - process websites (check limits)
     },

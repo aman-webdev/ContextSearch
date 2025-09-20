@@ -8,7 +8,7 @@ interface FileMetadata {
   id: string;
   fileName: string;
   uploadedAt: string;
-  documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT";
+  documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT" | "SUBTITLE";
   ext: string;
   source: string;
   title?: string;
@@ -34,6 +34,9 @@ export default function Home() {
   const [isLoadingFiles, setIsLoadingFiles] = useState(true);
   const [authToken, setAuthToken] = useState<string>('');
   const [isInitializingAuth, setIsInitializingAuth] = useState(true);
+  const [isFileUploading, setIsFileUploading] = useState(false);
+  const [isSubtitleUploading, setIsSubtitleUploading] = useState(false);
+  const [isWebsiteProcessing, setIsWebsiteProcessing] = useState(false);
 
   // Initialize authentication on component mount
   useEffect(() => {
@@ -55,24 +58,41 @@ export default function Home() {
       const existingToken = localStorage.getItem('authToken');
 
       if (existingToken) {
-        // TODO: Add token validation/expiration check here
-        setAuthToken(existingToken);
-        console.log('Using existing token from localStorage');
-      } else {
-        // No token found, call /api/me to get guest session
-        console.log('No token found, creating guest session...');
-        const response = await fetch('/api/me');
-        const data = await response.json();
+        // Validate existing token by making a test API call
+        try {
+          const testResponse = await fetch('/api/me', {
+            headers: {
+              'Authorization': `Bearer ${existingToken}`
+            }
+          });
 
-        if (response.ok && data.data) {
-          const token = data.data;
-          localStorage.setItem('authToken', token);
-          setAuthToken(token);
-          console.log('Guest session created:', data.message);
-        } else {
-          console.error('Failed to create guest session:', data.message);
-          setUploadStatus('Failed to initialize session');
+          if (testResponse.ok) {
+            setAuthToken(existingToken);
+            console.log('Using validated existing token');
+            return;
+          } else {
+            console.log('Existing token invalid, getting fresh token...');
+            localStorage.removeItem('authToken');
+          }
+        } catch (tokenTestError) {
+          console.log('Error validating token, getting fresh token...');
+          localStorage.removeItem('authToken');
         }
+      }
+
+      // Create new guest session
+      console.log('Creating new guest session...');
+      const response = await fetch('/api/me');
+      const data = await response.json();
+
+      if (response.ok && data.data) {
+        const token = data.data;
+        localStorage.setItem('authToken', token);
+        setAuthToken(token);
+        console.log('New guest session created:', data.message);
+      } else {
+        console.error('Failed to create guest session:', data.message);
+        setUploadStatus('Failed to initialize session');
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -233,15 +253,15 @@ export default function Home() {
   const handleFileUpload = async (file: File) => {
     if (!file) return;
 
+    setIsFileUploading(true);
     setUploadStatus('Uploading and processing file...');
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       const response = await authenticatedFormData('/api/upload', formData);
-
       const data = await response.json();
-      console.log('Upload response:', data);
+      console.log('Upload response:', { status: response.status, data });
 
       if (response.ok) {
         // Transform the backend response to match our interface
@@ -262,16 +282,87 @@ export default function Home() {
         setSelectedFile(newFile);
         setUploadStatus(data.message);
       } else {
-        const errorData = await response.json();
         // Handle limit reached vs other errors
-        if (response.status === 429 && errorData.limitReached) {
-          setUploadStatus(errorData.error);
+        if (response.status === 429 && data.limitReached) {
+          setUploadStatus(data.error);
+        } else if (response.status === 409) {
+          // Handle duplicate file conflicts
+          setUploadStatus(data.error || 'File already exists.');
         } else {
-          setUploadStatus(errorData.error || 'Failed to upload file.');
+          setUploadStatus(data.error || 'Failed to upload file.');
         }
       }
     } catch (error) {
-      setUploadStatus('Failed to upload file.');
+      console.error('Upload error:', error);
+      if (error instanceof Error && error.message.includes('Authentication failed')) {
+        setUploadStatus('Session expired. Please refresh the page.');
+        // Don't force refresh - let user refresh manually if needed
+      } else {
+        setUploadStatus('Failed to upload file.');
+      }
+    } finally {
+      setIsFileUploading(false);
+    }
+
+    setTimeout(() => setUploadStatus(''), 5000);
+  };
+
+  const handleSubtitleUpload = async (files: File[]) => {
+    if (!files || files.length === 0) return;
+
+    setIsSubtitleUploading(true);
+    setUploadStatus(`Uploading and processing ${files.length} subtitle file(s)...`);
+    const formData = new FormData();
+
+    // Append all files to form data
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    try {
+      const response = await authenticatedFormData('/api/subtitles', formData);
+      const data = await response.json();
+      console.log('Subtitle upload response:', { status: response.status, data });
+
+      if (response.ok) {
+        // Transform the backend response to match our interface
+        const newFiles: FileMetadata[] = data.results.map((result: any) => ({
+          id: result.data.id,
+          fileName: result.data.source,
+          uploadedAt: result.data.uploadedAt,
+          documentType: result.data.documentType,
+          ext: result.data.ext || '',
+          source: result.data.source,
+          title: result.data.title || result.data.source
+        }));
+
+        // Add to uploadedFiles at the top and auto-select the first one
+        setUploadedFiles(prev => [...newFiles, ...prev]);
+        if (newFiles.length > 0) {
+          setSelectedFile(newFiles[0]);
+        }
+        setUploadStatus(data.message);
+      } else {
+        // Handle limit reached vs other errors
+        if (response.status === 429 && data.limitReached) {
+          setUploadStatus(data.error);
+        } else if (response.status === 409) {
+          // Handle duplicate file conflicts
+          setUploadStatus(data.error || 'Subtitle file already exists.');
+        } else {
+          setUploadStatus(data.error || 'Failed to upload subtitle files.');
+        }
+      }
+    } catch (error) {
+      console.error('Subtitle upload error:', error);
+      if (error instanceof Error && error.message.includes('Authentication failed')) {
+        setUploadStatus('Session expired. Please refresh the page.');
+        // Don't force refresh - let user refresh manually if needed
+      } else {
+        setUploadStatus('Failed to upload subtitle files.');
+      }
+    } finally {
+      setIsSubtitleUploading(false);
     }
 
     setTimeout(() => setUploadStatus(''), 5000);
@@ -303,6 +394,7 @@ export default function Home() {
   const handleWebsiteSubmit = async (url: string) => {
     if (!url.trim()) return;
 
+    setIsWebsiteProcessing(true);
     setUploadStatus('Processing website...');
 
     try {
@@ -339,6 +431,8 @@ export default function Home() {
       }
     } catch (error) {
       setUploadStatus('Failed to process website.');
+    } finally {
+      setIsWebsiteProcessing(false);
     }
 
     setTimeout(() => setUploadStatus(''), 5000);
@@ -380,6 +474,7 @@ export default function Home() {
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
         onFileUpload={handleFileUpload}
+        onSubtitleUpload={handleSubtitleUpload}
         onWebsiteSubmit={handleWebsiteSubmit}
         onAddMetadata={handleAddMetadata}
         uploadStatus={uploadStatus}
@@ -387,6 +482,9 @@ export default function Home() {
         selectedFile={selectedFile}
         onFileSelect={setSelectedFile}
         isLoadingFiles={isLoadingFiles}
+        isFileUploading={isFileUploading}
+        isSubtitleUploading={isSubtitleUploading}
+        isWebsiteProcessing={isWebsiteProcessing}
       />
     </div>
   );

@@ -16,7 +16,7 @@ export const POST = async (request : Request) => {
         }
 
         // Check upload limits based on user type
-        const uploadLimit = userType === 'GUEST' ? 5 : 50;
+        const uploadLimit = userType === 'GUEST' ? 15 : 50;
         const userUploadsCount = await prisma.uploadedDocuments.count({
             where: { userId: userId }
         });
@@ -38,6 +38,21 @@ export const POST = async (request : Request) => {
         const body = await request.json()
         const {url} = body;
         if(!url || url.trim().length === 0)  return new Response(JSON.stringify({error:'URL is required'}), { status: 400 });
+
+        // Check if YouTube video already exists for this user
+        const existingVideo = await prisma.uploadedDocuments.findFirst({
+            where: {
+                userId: userId,
+                source: url,
+                documentType: 'YOUTUBE_TRANSCRIPT'
+            }
+        });
+
+        if (existingVideo) {
+            return new Response(JSON.stringify({
+                error: `YouTube video "${url}" already exists. This video has already been processed.`
+            }), { status: 409 });
+        }
         const {videoDetails} = await ytdl.getInfo(url);
         
 

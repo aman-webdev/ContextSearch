@@ -20,7 +20,7 @@ const prepareDoc = async (query : string) => {
                 content :  SYSTEM_PROMPT
             },
             {
-                role : "developer",
+                role : "user",
                 content : JSON.stringify(webSearchResults)
             }
         ]

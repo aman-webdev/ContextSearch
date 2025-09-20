@@ -25,16 +25,23 @@ model Video {
   uploadedDocument   UploadedDocuments @relation(fields: [uploadedDocumentId], references: [id])
 }
 
+enum DocumentType {
+  FILE
+  WEBSITE
+  YOUTUBE_TRANSCRIPT
+  SUBTITLE
+}
+
 model UploadedDocuments {
-  id           String   @id @default(uuid())
-  documentType String
-  uploadedAt   DateTime @default(now())
+  id           String      @id @default(uuid())
+  documentType DocumentType
+  uploadedAt   DateTime    @default(now())
   source       String
   ext          String?
   video        Video?
-  userId String
-  user  User @relation("UserUploadedDocuments",fields: [userId],references: [id])
-  title String?
+  userId       String
+  user         User        @relation("UserUploadedDocuments", fields: [userId], references: [id])
+  title        String?
 }
 
 model User {

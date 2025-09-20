@@ -5,9 +5,10 @@ import { useState } from 'react';
 interface WebsiteInputProps {
   onSubmit: (url: string) => void;
   status: string;
+  isUploading?: boolean;
 }
 
-export default function WebsiteInput({ onSubmit, status }: WebsiteInputProps) {
+export default function WebsiteInput({ onSubmit, status, isUploading = false }: WebsiteInputProps) {
   const [url, setUrl] = useState('');
   const [isValid, setIsValid] = useState(true);
 
@@ -21,11 +22,11 @@ export default function WebsiteInput({ onSubmit, status }: WebsiteInputProps) {
   };
 
   const handleSubmit = () => {
-    if (!url.trim()) return;
-    
+    if (!url.trim() || isUploading) return;
+
     const isUrlValid = validateUrl(url);
     setIsValid(isUrlValid);
-    
+
     if (isUrlValid) {
       onSubmit(url);
       setUrl('');
@@ -55,11 +56,12 @@ export default function WebsiteInput({ onSubmit, status }: WebsiteInputProps) {
             }}
             onKeyDown={handleKeyDown}
             placeholder="https://example.com"
+            disabled={isUploading}
             className={`
-              w-full px-4 py-3 bg-white border rounded-lg text-stone-900 
-              focus:outline-none focus:ring-2 transition-all
-              ${isValid 
-                ? 'border-stone-300 focus:border-blue-500 focus:ring-blue-500/20' 
+              w-full px-4 py-3 bg-white border rounded-lg text-stone-900
+              focus:outline-none focus:ring-2 transition-all disabled:bg-stone-100 disabled:cursor-not-allowed
+              ${isValid
+                ? 'border-stone-300 focus:border-blue-500 focus:ring-blue-500/20'
                 : 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
               }
             `}
@@ -91,29 +93,37 @@ export default function WebsiteInput({ onSubmit, status }: WebsiteInputProps) {
 
       <button
         onClick={handleSubmit}
-        disabled={!url.trim()}
+        disabled={!url.trim() || isUploading}
         className="
-          w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 text-white 
+          w-full py-3 px-4 bg-stone-600 hover:bg-stone-700 disabled:bg-stone-300 text-white
           disabled:cursor-not-allowed rounded-lg transition-colors font-medium
-          focus:outline-none focus:ring-2 focus:ring-blue-500/20
+          focus:outline-none focus:ring-2 focus:ring-stone-500/20 flex items-center justify-center gap-2
         "
       >
-        <div className="flex items-center justify-center gap-2">
-          <svg 
-            className="w-4 h-4" 
-            fill="none" 
-            stroke="currentColor" 
+        {isUploading && (
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        )}
+        {!isUploading && (
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M12 4v16m8-8H4" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
             />
           </svg>
-          Add Website
-        </div>
+        )}
+        <span>
+          {isUploading ? 'Processing...' : 'Add Website'}
+        </span>
       </button>
 
       {status && (

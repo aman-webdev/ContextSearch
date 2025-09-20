@@ -1,5 +1,6 @@
 import path from "path";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { SRTLoader } from "@langchain/community/document_loaders/fs/srt";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveUrlLoader } from "@langchain/community/document_loaders/web/recursive_url";
@@ -10,6 +11,7 @@ import pathCompleteExtName from "path-complete-extname"
 
 const embeddings = new OpenAIEmbeddings({
   model: "text-embedding-3-small",
+ 
 });
 
 const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
@@ -19,20 +21,29 @@ const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
 
 const vectorStoreRetriever = vectorStore.asRetriever({ k: 2 });
 
-const filePath = path.join(process.cwd(), "/tmp/RahulGupta.pdf");
-
 // TODO: modify this for other file types too
 export const loadDocument = async (pathToLoad: string) => {
   try {
     console.log(`loadDocument: Loading document from ${pathToLoad}`);
+    const ext = pathCompleteExtName(pathToLoad)
     const additionalDocMetadata = {
       fileName : path.basename(pathToLoad),
       uploadedAt : Date.now(),
       type : "FILE",
-      ext : pathCompleteExtName(pathToLoad)
+      ext 
     }
-    const loader = new PDFLoader(pathToLoad);
-    const docs = await loader.load();
+
+    let docs : any = []
+
+    if(ext === '.pdf'){
+      const loader = new PDFLoader(pathToLoad);
+      docs = await loader.load();
+    }
+    else {
+      throw new Error(`File type ${ext} not supported. Only PDF files are allowed in this endpoint.`);
+    }
+   
+    // console.log(docs[0],'docccc')
 
     for(const doc of docs) {
       doc.metadata = {...doc.metadata,...additionalDocMetadata}
@@ -47,8 +58,11 @@ export const loadDocument = async (pathToLoad: string) => {
 
 export const addDocumentToVectorStore = async (docs: Document<Record<string, any>>[]) => {
   try {
+
+
     console.log(`addDocumentToVectorStore: Adding document to vector store`);
-    await vectorStore.addDocuments(docs);
+
+    await vectorStore.addDocuments(docs)
     console.log(`addDocumentToVectorStore: Document added to vector store`);
   } catch (err) {
     console.log(

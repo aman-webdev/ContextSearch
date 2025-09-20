@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Modal from '../ui/Modal';
 import FileUpload from '../upload/FileUpload';
+import SubtitleUpload from '../upload/SubtitleUpload';
 import WebsiteInput from '../upload/WebsiteInput';
 import { authenticatedPost } from '../../lib/api';
 import { Inter } from 'next/font/google';
@@ -19,7 +20,7 @@ interface FileMetadata {
   id: string;
   fileName: string;
   uploadedAt: string;
-  documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT";
+  documentType: "FILE" | "WEBSITE" | "YOUTUBE_TRANSCRIPT" | "SUBTITLE";
   ext: string;
   source: string;
   title?: string;
@@ -41,6 +42,7 @@ interface NewChatInterfaceProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   onFileUpload: (file: File) => void;
+  onSubtitleUpload: (files: File[]) => void;
   onWebsiteSubmit: (url: string) => void;
   onAddMetadata: (metadata: FileMetadata) => void;
   uploadStatus: string;
@@ -48,6 +50,9 @@ interface NewChatInterfaceProps {
   selectedFile: FileMetadata | null;
   onFileSelect: (file: FileMetadata | null) => void;
   isLoadingFiles?: boolean;
+  isFileUploading?: boolean;
+  isSubtitleUploading?: boolean;
+  isWebsiteProcessing?: boolean;
 }
 
 export default function NewChatInterface({
@@ -55,16 +60,21 @@ export default function NewChatInterface({
   onSendMessage,
   isLoading,
   onFileUpload,
+  onSubtitleUpload,
   onWebsiteSubmit,
   onAddMetadata,
   uploadStatus,
   uploadedFiles,
   selectedFile,
   onFileSelect,
-  isLoadingFiles = false
+  isLoadingFiles = false,
+  isFileUploading = false,
+  isSubtitleUploading = false,
+  isWebsiteProcessing = false
 }: NewChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
+  const [isSubtitleModalOpen, setIsSubtitleModalOpen] = useState(false);
   const [isWebsiteModalOpen, setIsWebsiteModalOpen] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [urlError, setUrlError] = useState('');
@@ -124,6 +134,9 @@ export default function NewChatInterface({
           // Handle limit reached vs other errors
           if (response.status === 429 && errorData.limitReached) {
             setUrlError(errorData.error);
+          } else if (response.status === 409) {
+            // Handle duplicate YouTube video conflicts
+            setUrlError(errorData.error || 'YouTube video already exists.');
           } else {
             setUrlError(errorData.error || 'Failed to process YouTube URL');
           }
@@ -152,7 +165,7 @@ export default function NewChatInterface({
   };
 
   const handleSend = () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || isFileUploading || isSubtitleUploading || isWebsiteProcessing) return;
     onSendMessage(input);
     setInput('');
   };
@@ -164,13 +177,6 @@ export default function NewChatInterface({
     }
   };
 
-  const suggestionChips = [
-    "Summarize this document",
-    "What are the key findings?", 
-    "Extract important dates",
-    "Find specific information",
-    "Compare multiple sources"
-  ];
 
 
 
@@ -212,7 +218,8 @@ export default function NewChatInterface({
                   )}
                   <button
                     onClick={() => setIsFileModalOpen(true)}
-                    className="group p-2 text-stone-400 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
+                    disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing}
+                    className="group p-2 text-stone-400 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-stone-400 disabled:hover:bg-transparent"
                     title="Upload document"
                   >
                     <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,6 +290,98 @@ export default function NewChatInterface({
               )}
             </div>
 
+            {/* Subtitles Section */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <h3 className="text-sm font-semibold text-stone-800 uppercase tracking-wide">Subtitles</h3>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {selectedFile && selectedFile.documentType === 'SUBTITLE' && (
+                    <button
+                      onClick={() => onFileSelect(null)}
+                      className="group flex items-center px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded text-xs transition-all duration-200"
+                    >
+                      <svg className="w-3 h-3 mr-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsSubtitleModalOpen(true)}
+                    disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing}
+                    className="px-3 py-1.5 bg-stone-600 hover:bg-stone-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-stone-600"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4zM6 6v12h12V6H6zm3 3h6v2H9V9zm0 4h6v2H9v-2z" />
+                    </svg>
+                    <span>Upload</span>
+                  </button>
+                </div>
+              </div>
+
+              {isLoadingFiles ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-stone-100 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-stone-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <p className="text-xs text-stone-500 font-medium">Loading subtitles...</p>
+                </div>
+              ) : uploadedFiles.filter(file => file.documentType === 'SUBTITLE').length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-stone-100 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4zM6 6v12h12V6H6zm3 3h6v2H9V9zm0 4h6v2H9v-2z" />
+                    </svg>
+                  </div>
+                  <p className="text-xs text-stone-500 font-medium">No subtitles yet</p>
+                  <p className="text-xs text-stone-400 mt-1">Upload SRT or VTT files to get started</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {uploadedFiles.filter(file => file.documentType === 'SUBTITLE').map((file) => (
+                    <button
+                      key={file.id}
+                      onClick={() => onFileSelect(file)}
+                      className={`group w-full text-left p-4 rounded-xl border transition-all duration-300 hover:shadow-sm animate-in slide-in-from-left-1 hover:scale-[1.02] ${
+                        selectedFile?.id === file.id
+                          ? 'bg-gradient-to-r from-gray-800 via-gray-700 to-stone-700 border-gray-600 shadow-md'
+                          : 'bg-white border-stone-200/60 hover:bg-stone-50/50 hover:border-stone-300'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                          selectedFile?.id === file.id
+                            ? 'bg-gray-600 text-white'
+                            : 'bg-stone-100 text-stone-600 group-hover:bg-stone-200'
+                        }`}>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4zM6 6v12h12V6H6zm3 3h6v2H9V9zm0 4h6v2H9v-2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-semibold truncate ${
+                            selectedFile?.id === file.id ? 'text-white' : 'text-stone-800'
+                          }`}>
+                            {file.fileName}
+                          </p>
+                          <p className={`text-xs mt-1 ${
+                            selectedFile?.id === file.id ? 'text-gray-300' : 'text-stone-500'
+                          }`}>
+                            {new Date(file.uploadedAt).toLocaleDateString()} • {file.ext}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Websites Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -320,12 +419,13 @@ export default function NewChatInterface({
                       }
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && websiteUrl.trim() && isValidUrl(websiteUrl)) {
+                      if (e.key === 'Enter' && websiteUrl.trim() && isValidUrl(websiteUrl) && !isProcessingUrl && !isWebsiteProcessing) {
                         handleUrlSubmit();
                       }
                     }}
                     placeholder="Enter website or YouTube URL..."
-                    className={`flex-1 px-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-1 placeholder-stone-400 transition-all ${
+                    disabled={isProcessingUrl || isWebsiteProcessing}
+                    className={`flex-1 px-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-1 placeholder-stone-400 transition-all disabled:bg-stone-100 disabled:cursor-not-allowed ${
                       urlError
                         ? 'border-red-300 focus:ring-red-400 focus:border-red-400'
                         : 'border-stone-200/60 focus:ring-stone-400 focus:border-stone-400'
@@ -333,7 +433,7 @@ export default function NewChatInterface({
                   />
                   <button
                     onClick={handleUrlSubmit}
-                    disabled={!websiteUrl.trim() || !isValidUrl(websiteUrl) || isProcessingUrl}
+                    disabled={!websiteUrl.trim() || !isValidUrl(websiteUrl) || isProcessingUrl || isWebsiteProcessing}
                     className="px-4 py-2 bg-stone-600 hover:bg-stone-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center space-x-2"
                   >
                     {isProcessingUrl ? (
@@ -451,6 +551,7 @@ export default function NewChatInterface({
         </div>
 
         {/* Bottom Auth Section - Fixed */}
+        {false && (
         <div className="mt-auto border-t border-stone-200/60 bg-white/80 backdrop-blur-sm">
           <div className="p-5 space-y-4">
             {/* Guest User Limits */}
@@ -465,7 +566,7 @@ export default function NewChatInterface({
                 You have limited access. <span className="font-medium">10 messages</span> and <span className="font-medium">5 uploads</span> only.
               </p>
               <p className="text-xs text-amber-600 font-medium">
-                💾 Sign up to save your chats and get more access!
+                💾 Sign up or Login to get more access!
               </p>
             </div>
 
@@ -492,16 +593,24 @@ export default function NewChatInterface({
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col ml-80">
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-4 bg-stone-50/80 border-b border-stone-200">
-        <div className="flex items-center">
-          <h1 className="text-2xl font-bold text-stone-900">ContextSearch</h1>
+        <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-5 bg-stone-50 border-b border-stone-200 backdrop-blur-sm">
+          <div className="flex items-center space-x-3">
+            {/* Logo Icon */}
+            <div className="w-9 h-9 bg-stone-800 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            {/* Logo Text */}
+            <h1 className="text-xl font-bold text-stone-900 tracking-tight">ContextSearch</h1>
+          </div>
         </div>
-      </div>
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -509,26 +618,57 @@ export default function NewChatInterface({
             // Welcome Screen
             <div className="flex-1 flex items-center justify-center px-8 pb-32">
               <div className="max-w-2xl w-full text-center space-y-8">
-                <div className="space-y-4">
-                  <h2 className="text-3xl font-semibold text-stone-900">
-                    Ask questions about your documents
-                  </h2>
-                  <p className="text-lg text-stone-600">
-                    Get instant answers from your documents and web content
-                  </p>
-                </div>
+                <div className="space-y-8">
+                  {/* Icon Section */}
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      {/* Main search icon */}
+                      <div className="w-20 h-20 bg-gradient-to-br from-stone-800 to-stone-900 rounded-2xl flex items-center justify-center shadow-xl">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
 
-                {/* Suggestion Chips */}
-                <div className="flex flex-wrap gap-3 justify-center">
-                  {suggestionChips.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setInput(suggestion)}
-                      className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full text-sm transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+                      {/* Floating content type icons - scattered around */}
+
+                      {/* PDF icon - top right */}
+                      <div className="absolute -top-4 -right-6 w-16 h-16 bg-stone-800 rounded-xl shadow-lg animate-bounce flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+
+                      {/* YouTube icon - bottom left */}
+                      <div className="absolute -bottom-5 -left-5 w-16 h-16 bg-stone-800 rounded-xl shadow-lg animate-bounce delay-100 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+
+                      {/* Website icon - middle left */}
+                      <div className="absolute top-6 -left-8 w-14 h-14 bg-stone-800 rounded-xl shadow-lg animate-bounce delay-200 flex items-center justify-center">
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+
+                      {/* Subtitles icon - top center-right */}
+                      <div className="absolute -top-7 right-2 w-14 h-14 bg-stone-800 rounded-xl shadow-lg animate-bounce delay-300 flex items-center justify-center">
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h2 className="text-4xl font-bold text-stone-900">
+                      Ask questions about your content
+                    </h2>
+                    <p className="text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
+                      Upload PDFs, subtitles, websites, and YouTube videos to get intelligent answers from all your content in one place
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -552,10 +692,10 @@ export default function NewChatInterface({
                       // Assistant Message - Dark Gradient
                       <div className="flex justify-start">
                         <div className="relative">
-                          <div className="bg-gradient-to-br from-stone-700 via-stone-800 to-stone-900 text-white px-6 py-5 rounded-3xl rounded-bl-lg max-w-3xl border border-stone-600/30">
+                          <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-black text-white px-6 py-5 rounded-3xl rounded-bl-lg max-w-3xl border border-slate-800/40 shadow-xl">
                             <p className="text-sm leading-relaxed whitespace-pre-wrap font-normal text-white">{message.content}</p>
                           </div>
-                          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-stone-600 to-stone-800 rounded-full"></div>
+                          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-slate-800 to-black rounded-full"></div>
                         </div>
                       </div>
                     )}
@@ -565,7 +705,7 @@ export default function NewChatInterface({
                 {isLoading && (
                   <div className="flex justify-start mb-8 animate-in fade-in duration-300">
                     <div className="relative">
-                      <div className="bg-gradient-to-br from-stone-700 via-stone-800 to-stone-900 text-white px-6 py-5 rounded-3xl rounded-bl-lg border border-stone-600/30">
+                      <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-black text-white px-6 py-5 rounded-3xl rounded-bl-lg border border-slate-800/40 shadow-xl">
                         <div className="flex items-center space-x-4">
                           <div className="flex space-x-1.5">
                             <div className="w-2.5 h-2.5 bg-gradient-to-r from-stone-300 to-stone-400 rounded-full animate-bounce"></div>
@@ -577,7 +717,7 @@ export default function NewChatInterface({
                           </span>
                         </div>
                       </div>
-                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-stone-600 to-stone-800 rounded-full"></div>
+                      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-slate-800 to-black rounded-full"></div>
                     </div>
                   </div>
                 )}
@@ -635,9 +775,9 @@ export default function NewChatInterface({
 
             <button
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || isFileUploading || isSubtitleUploading || isWebsiteProcessing}
               className={`p-4 rounded-xl transition-colors ${
-                !input.trim() || isLoading
+                !input.trim() || isLoading || isFileUploading || isSubtitleUploading || isWebsiteProcessing
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : 'bg-stone-600 hover:bg-stone-700 text-white'
               }`}
@@ -663,12 +803,28 @@ export default function NewChatInterface({
         onClose={() => setIsFileModalOpen(false)}
         title="Upload Document"
       >
-        <FileUpload 
+        <FileUpload
           onUpload={(file) => {
             onFileUpload(file);
             setIsFileModalOpen(false);
           }}
           status=""
+          isUploading={isFileUploading}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isSubtitleModalOpen}
+        onClose={() => setIsSubtitleModalOpen(false)}
+        title="Upload Subtitle Files"
+      >
+        <SubtitleUpload
+          onUpload={(files) => {
+            onSubtitleUpload(files);
+            setIsSubtitleModalOpen(false);
+          }}
+          status=""
+          isUploading={isSubtitleUploading}
         />
       </Modal>
 
@@ -677,43 +833,58 @@ export default function NewChatInterface({
         onClose={() => setIsWebsiteModalOpen(false)}
         title="Add Website"
       >
-        <WebsiteInput 
+        <WebsiteInput
           onSubmit={(url) => {
             onWebsiteSubmit(url);
             setIsWebsiteModalOpen(false);
           }}
           status=""
+          isUploading={isWebsiteProcessing}
         />
       </Modal>
 
       {/* Toast Notification */}
       {uploadStatus && (
-        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
-          <div className={`px-4 py-3 rounded-lg shadow-lg border ${
-            uploadStatus.includes('successfully') 
-              ? 'bg-green-50 border-green-200 text-green-800' 
-              : uploadStatus.includes('Failed') || uploadStatus.includes('Error')
-              ? 'bg-red-50 border-red-200 text-red-800'
-              : 'bg-blue-50 border-blue-200 text-blue-800'
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2 duration-300">
+          <div className={`px-6 py-4 rounded-xl shadow-lg border backdrop-blur-sm ${
+            uploadStatus.includes('successfully')
+              ? 'bg-white/90 border-green-200 text-green-700'
+              : uploadStatus.includes('Failed') || uploadStatus.includes('Error') || uploadStatus.includes('already exists')
+              ? 'bg-white/90 border-red-200 text-red-700'
+              : uploadStatus.includes('limit') || uploadStatus.includes('expired')
+              ? 'bg-white/90 border-amber-200 text-amber-700'
+              : 'bg-white/90 border-stone-300 text-stone-700'
           }`}>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 max-w-md">
               <div className="flex-shrink-0">
                 {uploadStatus.includes('successfully') ? (
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                ) : uploadStatus.includes('Failed') || uploadStatus.includes('Error') ? (
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
+                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                ) : uploadStatus.includes('Failed') || uploadStatus.includes('Error') || uploadStatus.includes('already exists') ? (
+                  <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                ) : uploadStatus.includes('limit') || uploadStatus.includes('expired') ? (
+                  <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 ) : (
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <div className="w-5 h-5 bg-stone-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-stone-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
                 )}
               </div>
-              <p className="text-sm font-medium">{uploadStatus}</p>
+              <p className="text-sm font-medium leading-relaxed">{uploadStatus}</p>
             </div>
           </div>
         </div>
