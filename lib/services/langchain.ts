@@ -1,6 +1,6 @@
 import path from "path";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
-import { SRTLoader } from "@langchain/community/document_loaders/fs/srt";
+// import { SRTLoader } from "@langchain/community/document_loaders/fs/srt";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveUrlLoader } from "@langchain/community/document_loaders/web/recursive_url";
@@ -34,7 +34,7 @@ export const loadDocument = async (pathToLoad: string) => {
       ext 
     }
 
-    let docs : any = []
+    let docs: Document[] = []
 
     if(ext === '.pdf'){
       const loader = new PDFLoader(pathToLoad);
@@ -57,7 +57,7 @@ export const loadDocument = async (pathToLoad: string) => {
   }
 };
 
-export const addDocumentToVectorStore = async (docs: Document<Record<string, any>>[]) => {
+export const addDocumentToVectorStore = async (docs: Document<Record<string, unknown>>[]) => {
   try {
 
 
@@ -84,7 +84,7 @@ export const queryVectorStore = async (query: string) => {
   }
 };
 
-export const queryVectorStoreWithFilter = async (query: string, metadata: Record<string, any>) => {
+export const queryVectorStoreWithFilter = async (query: string, metadata: Record<string, unknown>) => {
   try {
     console.log(`queryVectorStoreWithFilter: Querying with filter metadata:`, metadata);
     
@@ -145,7 +145,7 @@ export const websiteLoader = async (url: string) => {
   }
 };
 
-export const splitTextToChunks = async (docs : Document<Record<string, any>>[]) => {
+export const splitTextToChunks = async (docs: Document<Record<string, unknown>>[]) => {
     const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 2000,
   chunkOverlap: 100,

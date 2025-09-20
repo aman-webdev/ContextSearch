@@ -1,5 +1,5 @@
 
-const getWebContent = async (query: string) => {};
+const getWebContent = async () => {};
 
 const mappedTools = {
     'getWebContent' : getWebContent

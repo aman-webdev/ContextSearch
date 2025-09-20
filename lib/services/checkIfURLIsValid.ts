@@ -2,7 +2,7 @@ const checkIfValidURL = (urlString: string): boolean => {
     try {
         new URL(urlString);
         return true;
-    } catch (err) {
+    } catch {
         return false;
     }
 }

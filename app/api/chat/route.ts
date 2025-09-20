@@ -70,7 +70,7 @@ export const POST = async (request: Request) => {
 
     // Format retrieved documents properly
     const contextContent = retreivedDocs
-      .map((doc, index) => {
+      .map((doc) => {
         const metadata = doc.metadata;
         const content = doc.pageContent;
 

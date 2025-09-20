@@ -27,7 +27,7 @@ export async function authenticateRequest(request: Request): Promise<AuthResult>
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'mysecret') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'mysecret') as {id: string; userType: string};
 
     // Get user from database to ensure they still exist
     const user = await prisma.user.findUnique({
@@ -46,7 +46,7 @@ export async function authenticateRequest(request: Request): Promise<AuthResult>
       success: true,
       user: {
         id: user.id,
-        type: user.type,
+        userType: user.type,
         sessionId: user.sessionId || undefined,
         email: user.email || undefined
       }
@@ -62,7 +62,7 @@ export async function authenticateRequest(request: Request): Promise<AuthResult>
 }
 
 // Helper function for easy usage in API routes
-export function withAuth(handler: (request: Request, user: any) => Promise<Response>) {
+export function withAuth(handler: (request: Request, user: {id: string; userType: string; sessionId?: string; email?: string}) => Promise<Response>) {
   return async (request: Request) => {
     const authResult = await authenticateRequest(request);
 
@@ -75,6 +75,18 @@ export function withAuth(handler: (request: Request, user: any) => Promise<Respo
       });
     }
 
-    return handler(request, authResult.user);
+    if (authResult.user) {
+      return handler(request, {
+        id: authResult.user.id,
+        userType: authResult.user.type,
+        sessionId: authResult.user.sessionId,
+        email: authResult.user.email
+      });
+    } else {
+      return new Response(JSON.stringify({ error: 'User not found' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   };
 }

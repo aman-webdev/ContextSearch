@@ -67,7 +67,7 @@ export async function authenticatedGet(url: string) {
 }
 
 // Helper for POST requests
-export async function authenticatedPost(url: string, data?: any) {
+export async function authenticatedPost(url: string, data?: Record<string, unknown>) {
   return authenticatedFetch(url, {
     method: 'POST',
     body: data ? JSON.stringify(data) : undefined

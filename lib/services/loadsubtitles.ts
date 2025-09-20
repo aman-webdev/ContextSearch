@@ -1,6 +1,6 @@
 import { Document } from "@langchain/core/documents";
 import { parse } from "@plussub/srt-vtt-parser";
-import { Entry } from "@plussub/srt-vtt-parser/dist/types";
+// import { Entry } from "@plussub/srt-vtt-parser/dist/types";
 import fs from "fs";
 import path from "path";
 

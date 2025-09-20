@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { addDocumentToVectorStore, loadDocument } from "@/lib/services/langchain";
 import saveFile from "@/lib/services/saveFileLocally";
-import uploadFile from "@/lib/supabase/uploadFile";
+// import uploadFile from "@/lib/supabase/uploadFile";
 
 export const POST = async(request: Request) => {
     try{

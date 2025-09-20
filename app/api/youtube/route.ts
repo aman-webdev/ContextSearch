@@ -106,8 +106,8 @@ export const POST = async (request : Request) => {
             data : {...result , video : videoResult}
         }))
     }
-    catch(err : any) {
+    catch(err: unknown) {
         console.log('youtube : Error ', err)
-        return new Response(err.message || "Something went wrong")
+        return new Response(err instanceof Error ? err.message : "Something went wrong")
     }
 }
