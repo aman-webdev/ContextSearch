@@ -1,3 +1,4 @@
+import { DocumentType } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
@@ -24,7 +25,7 @@ export const GET = async (request: NextRequest) => {
     if (type) {
       documents = await prisma.uploadedDocuments.findMany({
         where: {
-          documentType: type,
+          documentType: type as unknown as DocumentType,
           userId: userId  // Only get documents for this user
         },
         orderBy: {
