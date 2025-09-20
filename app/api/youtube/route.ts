@@ -84,8 +84,8 @@ export const POST = async (request : Request) => {
 
          const result = await prisma.uploadedDocuments.create({
         data: {
-            documentType : videoMetadata.type,
-            source : videoMetadata.source,
+            documentType: 'YOUTUBE_TRANSCRIPT',
+            source: videoMetadata.source,
             userId: userId,
         }
     })

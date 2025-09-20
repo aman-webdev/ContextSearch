@@ -79,10 +79,10 @@ export const POST = async (request: Request) => {
 
     const result = await prisma.uploadedDocuments.create({
       data: {
-        documentType: additionalWebsiteMetadata.type,
+        documentType: 'WEBSITE',
         source: additionalWebsiteMetadata.source,
         userId: userId,
-        title : additionalWebsiteMetadata.title
+        title: url
       },
     });
 
