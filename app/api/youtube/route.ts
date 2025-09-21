@@ -1,5 +1,5 @@
 import { addDocumentToVectorStore, splitTextToChunks } from '@/lib/services/langchain';
-import { fetchTranscript } from 'youtube-transcript-plus';
+import { getYoutubeVideoTranscript } from 'youtube-transcript-generator';
 import { Document } from "@langchain/core/documents";
 import ytv from "ytv"
 import prisma from '@/lib/prisma';
@@ -88,11 +88,7 @@ export const POST = async (request : Request) => {
         let transcript;
 
         try {
-            transcriptRes = await fetchTranscript(url, {
-                userAgent:
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            });
-            transcript = (transcriptRes.map(t=>t.text)).join(" ");
+            transcript = await getYoutubeVideoTranscript(url);
         } catch (transcriptError) {
             console.log('Transcript fetch failed:', transcriptError);
             throw new Error('Unable to fetch transcript. This video may not have captions available or may be restricted.');
@@ -122,6 +118,7 @@ export const POST = async (request : Request) => {
             data: {
                 author : videoMetadata.author,
                 title : videoMetadata.title,
+                description: null,
                 thumbnail : videoMetadata.thumbnail,
                 uploadedDocumentId : result.id
 

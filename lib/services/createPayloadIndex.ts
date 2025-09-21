@@ -19,6 +19,11 @@ const payloadIndexes : any = [
         'field_name' : 'metadata.uploadedAt',
         'field_schema' : "datetime"
     },
+
+    {
+        'field_name' : 'metadata.title',
+        'field_schema' : "keyword"
+    },
 ]
 const qdrantClient = new QdrantClient({url: process.env.QDRANT_URL, apiKey : process.env.QDRANT_API_KEY,checkCompatibility :false});
 

@@ -92,6 +92,9 @@ dependencies:
   youtube-transcript-api:
     specifier: ^3.0.6
     version: 3.0.6
+  youtube-transcript-generator:
+    specifier: ^1.0.5
+    version: 1.0.5
   youtube-transcript-plus:
     specifier: ^1.1.1
     version: 1.1.1
@@ -3990,6 +3993,12 @@ packages:
       cheerio: 1.1.2
     transitivePeerDependencies:
       - debug
+    dev: false
+
+  /youtube-transcript-generator@1.0.5:
+    resolution: {integrity: sha512-gT1RCz4p9nmtLelCXjoF3m7y2ih95rm3mTVDohQNCPYRaKttr+tcwOsvQx6huMLGOWblX+TMolDIobvGOv1LIQ==}
+    dependencies:
+      node-fetch: 3.3.2
     dev: false
 
   /youtube-transcript-plus@1.1.1:
