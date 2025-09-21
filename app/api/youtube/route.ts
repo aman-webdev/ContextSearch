@@ -1,7 +1,7 @@
 import { addDocumentToVectorStore, splitTextToChunks } from '@/lib/services/langchain';
 import { fetchTranscript } from 'youtube-transcript-plus';
 import { Document } from "@langchain/core/documents";
-import ytdl from "@distube/ytdl-core"
+import ytv from "ytv"
 import prisma from '@/lib/prisma';
 export const POST = async (request : Request) => {
     try{
@@ -61,15 +61,8 @@ export const POST = async (request : Request) => {
 
             try {
                 // Configure ytdl with options to avoid bot detection
-                const info = await ytdl.getInfo(url, {
-                    requestOptions: {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                            'Connection': 'keep-alive',
-                        }
-                    }
-                });
-                videoDetails = info.videoDetails;
+                videoDetails = await ytv.get_info(url);
+                
             } finally {
                 // Always restore original working directory
                 process.chdir(originalCwd);
@@ -81,9 +74,8 @@ export const POST = async (request : Request) => {
 
         const videoMetadata = {
             title : videoDetails.title,
-            description : videoDetails.description,
-            author : videoDetails.author.name,
-            thumbnail : videoDetails.thumbnails[1]?.url || videoDetails.thumbnails[0]?.url,
+            author : videoDetails.channel_name,
+            thumbnail : videoDetails.small_thumbnail || '',
             type : 'YOUTUBE_TRANSCRIPT',
             uploadedAt : Date.now(),
             source : url
@@ -126,7 +118,6 @@ export const POST = async (request : Request) => {
       const videoResult = await prisma.video.create({
             data: {
                 author : videoMetadata.author,
-                description : videoMetadata.description || '',
                 title : videoMetadata.title,
                 thumbnail : videoMetadata.thumbnail,
                 uploadedDocumentId : result.id
