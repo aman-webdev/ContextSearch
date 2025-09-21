@@ -90,21 +90,36 @@ export const queryVectorStore = async (query: string) => {
 export const queryVectorStoreWithFilter = async (query: string, metadata: Record<string, unknown>) => {
   try {
     console.log(`queryVectorStoreWithFilter: Querying with filter metadata:`, metadata);
-    
-    // Build filter conditions from metadata
-    const filterConditions = Object.entries(metadata).map(([key, value]) => ({
-      key: `metadata.${key}`,
-      match: { value }
-    }));
-    
+
     const vectorStore = await getVectorStore();
-    const retreivedDocs = await vectorStore.similaritySearch(query, 10, {
-      must: filterConditions
-    });
-    console.log(`queryVectorStoreWithFilter: Found ${retreivedDocs.length} documents`);
-    return retreivedDocs;
+
+    // Try with filter first
+    try {
+      // Build filter conditions for Qdrant
+      const filterConditions = Object.entries(metadata).map(([key, value]) => ({
+        key,
+        match: { value: value }
+      }));
+
+      const filter = {
+        must: filterConditions
+      };
+
+      console.log(`queryVectorStoreWithFilter: Using filter:`, JSON.stringify(filter, null, 2));
+
+      const retreivedDocs = await vectorStore.similaritySearch(query, 10, filter);
+      console.log(`queryVectorStoreWithFilter: Found ${retreivedDocs.length} documents with filter`);
+      return retreivedDocs;
+    } catch (filterError) {
+      console.log("queryVectorStoreWithFilter: Filter failed, trying without filter:", filterError);
+
+      // Fallback to query without filter
+      const retreivedDocs = await vectorStore.similaritySearch(query, 10);
+      console.log(`queryVectorStoreWithFilter: Found ${retreivedDocs.length} documents without filter`);
+      return retreivedDocs;
+    }
   } catch (err) {
-    console.log("queryVectorStoreWithFilter: Error querying vector store with filter", err);
+    console.log("queryVectorStoreWithFilter: Error querying vector store", err);
     throw err;
   }
 };
