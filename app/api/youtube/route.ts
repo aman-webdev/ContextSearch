@@ -53,22 +53,51 @@ export const POST = async (request : Request) => {
                 error: `YouTube video "${url}" already exists. This video has already been processed.`
             }), { status: 409 });
         }
-        const {videoDetails} = await ytdl.getInfo(url);
-        
+        let videoDetails;
+        try {
+            // Configure ytdl with options to avoid bot detection
+            const info = await ytdl.getInfo(url, {
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Accept-Encoding': 'gzip, deflate',
+                        'DNT': '1',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1'
+                    }
+                }
+            });
+            videoDetails = info.videoDetails;
+        } catch (videoError) {
+            console.log('Video info fetch failed:', videoError);
+            throw new Error('Unable to fetch video information. Video may be private or restricted.');
+        }
 
         const videoMetadata = {
             title : videoDetails.title,
             description : videoDetails.description,
             author : videoDetails.author.name,
-            thumbnail : videoDetails.thumbnails[1].url,
+            thumbnail : videoDetails.thumbnails[1]?.url || videoDetails.thumbnails[0]?.url,
             type : 'YOUTUBE_TRANSCRIPT',
             uploadedAt : Date.now(),
             source : url
         }
 
-        const transcriptRes = await fetchTranscript(url);
-        // console.log(transcriptRes,'txres')
-        const transcript = (transcriptRes.map(t=>t.text)).join(" ")
+        // Add delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        let transcriptRes;
+        let transcript;
+
+        try {
+            transcriptRes = await fetchTranscript(url);
+            transcript = (transcriptRes.map(t=>t.text)).join(" ");
+        } catch (transcriptError) {
+            console.log('Transcript fetch failed:', transcriptError);
+            throw new Error('Unable to fetch transcript. This video may not have captions available or may be restricted.');
+        }
 
 
         const transcriptDoc = new Document({
