@@ -55,21 +55,30 @@ export const POST = async (request : Request) => {
         }
         let videoDetails;
         try {
-            // Configure ytdl with options to avoid bot detection
-            const info = await ytdl.getInfo(url, {
-                requestOptions: {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Accept-Encoding': 'gzip, deflate',
-                        'DNT': '1',
-                        'Connection': 'keep-alive',
-                        'Upgrade-Insecure-Requests': '1'
+            // Set working directory to /tmp for serverless environments
+            const originalCwd = process.cwd();
+            process.chdir('/tmp');
+
+            try {
+                // Configure ytdl with options to avoid bot detection
+                const info = await ytdl.getInfo(url, {
+                    requestOptions: {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'Accept-Language': 'en-US,en;q=0.5',
+                            'Accept-Encoding': 'gzip, deflate',
+                            'DNT': '1',
+                            'Connection': 'keep-alive',
+                            'Upgrade-Insecure-Requests': '1'
+                        }
                     }
-                }
-            });
-            videoDetails = info.videoDetails;
+                });
+                videoDetails = info.videoDetails;
+            } finally {
+                // Always restore original working directory
+                process.chdir(originalCwd);
+            }
         } catch (videoError) {
             console.log('Video info fetch failed:', videoError);
             throw new Error('Unable to fetch video information. Video may be private or restricted.');
