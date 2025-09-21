@@ -210,7 +210,7 @@ export default function Home() {
             source: selectedFile.source,
             type: selectedFile.documentType
           } : {
-            fileName: selectedFile.fileName,
+            source: selectedFile.source,
             type: selectedFile.documentType,
             ext: selectedFile.ext
           }

@@ -18,7 +18,8 @@ const getVectorStore = async () => {
   return await QdrantVectorStore.fromExistingCollection(embeddings, {
     url: process.env.QDRANT_URL,
     collectionName: "uploaded_files",
-    apiKey: process.env.QDRANT_API_KEY
+    apiKey: process.env.QDRANT_API_KEY,
+
   });
 };
 
@@ -28,7 +29,7 @@ export const loadDocument = async (pathToLoad: string) => {
     console.log(`loadDocument: Loading document from ${pathToLoad}`);
     const ext = pathCompleteExtName(pathToLoad)
     const additionalDocMetadata = {
-      fileName : path.basename(pathToLoad),
+      source : path.basename(pathToLoad),
       uploadedAt : Date.now(),
       type : "FILE",
       ext 
@@ -97,7 +98,7 @@ export const queryVectorStoreWithFilter = async (query: string, metadata: Record
     try {
       // Build filter conditions for Qdrant
       const filterConditions = Object.entries(metadata).map(([key, value]) => ({
-        key,
+        key : `metadata.${key}`,
         match: { value: value }
       }));
 

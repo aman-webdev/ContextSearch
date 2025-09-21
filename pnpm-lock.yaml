@@ -13,7 +13,7 @@ dependencies:
     version: 4.16.12
   '@langchain/community':
     specifier: ^0.3.55
-    version: 0.3.55(@browserbasehq/stagehand@1.14.0)(@ibm-cloud/watsonx-ai@1.6.12)(@langchain/core@0.3.75)(@supabase/supabase-js@2.57.4)(axios@1.12.1)(d3-dsv@2.0.0)(html-to-text@9.0.5)(ibm-cloud-sdk-core@5.4.2)(jsdom@27.0.0)(jsonwebtoken@9.0.2)(openai@5.20.1)(pdf-parse@1.1.1)(srt-parser-2@1.2.3)
+    version: 0.3.55(@browserbasehq/stagehand@1.14.0)(@ibm-cloud/watsonx-ai@1.6.12)(@langchain/core@0.3.75)(@qdrant/js-client-rest@1.15.1)(@supabase/supabase-js@2.57.4)(axios@1.12.1)(d3-dsv@2.0.0)(html-to-text@9.0.5)(ibm-cloud-sdk-core@5.4.2)(jsdom@27.0.0)(jsonwebtoken@9.0.2)(openai@5.20.1)(pdf-parse@1.1.1)(srt-parser-2@1.2.3)
   '@langchain/core':
     specifier: ^0.3.75
     version: 0.3.75(openai@5.20.1)
@@ -32,6 +32,9 @@ dependencies:
   '@prisma/client':
     specifier: ^6.16.1
     version: 6.16.1(prisma@6.16.1)(typescript@5.9.2)
+  '@qdrant/js-client-rest':
+    specifier: ^1.15.1
+    version: 1.15.1(typescript@5.9.2)
   '@supabase/supabase-js':
     specifier: ^2.57.4
     version: 2.57.4
@@ -706,7 +709,7 @@ packages:
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
     dev: false
 
-  /@langchain/community@0.3.55(@browserbasehq/stagehand@1.14.0)(@ibm-cloud/watsonx-ai@1.6.12)(@langchain/core@0.3.75)(@supabase/supabase-js@2.57.4)(axios@1.12.1)(d3-dsv@2.0.0)(html-to-text@9.0.5)(ibm-cloud-sdk-core@5.4.2)(jsdom@27.0.0)(jsonwebtoken@9.0.2)(openai@5.20.1)(pdf-parse@1.1.1)(srt-parser-2@1.2.3):
+  /@langchain/community@0.3.55(@browserbasehq/stagehand@1.14.0)(@ibm-cloud/watsonx-ai@1.6.12)(@langchain/core@0.3.75)(@qdrant/js-client-rest@1.15.1)(@supabase/supabase-js@2.57.4)(axios@1.12.1)(d3-dsv@2.0.0)(html-to-text@9.0.5)(ibm-cloud-sdk-core@5.4.2)(jsdom@27.0.0)(jsonwebtoken@9.0.2)(openai@5.20.1)(pdf-parse@1.1.1)(srt-parser-2@1.2.3):
     resolution: {integrity: sha512-vCBM59gYfsRxB+OCD2ot/6Hb5/uKHipGKDxP6Jq3PCB/hUR6crvPi0nxb1bi+DJub6FpZUmSnwj7YV240ObaaQ==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -1094,6 +1097,7 @@ packages:
       '@langchain/core': 0.3.75(openai@5.20.1)
       '@langchain/openai': 0.6.11(@langchain/core@0.3.75)
       '@langchain/weaviate': 0.2.2(@langchain/core@0.3.75)
+      '@qdrant/js-client-rest': 1.15.1(typescript@5.9.2)
       '@supabase/supabase-js': 2.57.4
       binary-extensions: 2.3.0
       d3-dsv: 2.0.0

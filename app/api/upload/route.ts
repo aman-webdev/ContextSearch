@@ -103,7 +103,7 @@ export const POST = async(request: Request) => {
         const result = await prisma.uploadedDocuments.create({
             data: {
                 documentType: 'FILE',
-                source: additionalDocMetadata.fileName,
+                source: additionalDocMetadata.source,
                 ext: additionalDocMetadata.ext,
                 userId: userId
             }
