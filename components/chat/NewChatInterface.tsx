@@ -623,38 +623,38 @@ export default function NewChatInterface({
                   <div className="flex justify-center">
                     <div className="relative">
                       {/* Main search icon */}
-                      <div className="w-20 h-20 bg-gradient-to-br from-stone-800 to-stone-900 rounded-2xl flex items-center justify-center shadow-xl">
-                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-32 h-32 bg-gradient-to-br from-stone-800 to-stone-900 rounded-full flex items-center justify-center shadow-xl z-20 relative">
+                        <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
 
-                      {/* Floating content type icons - scattered around */}
+                      {/* Floating content type icons - messy/scattered */}
 
-                      {/* PDF icon - top right */}
-                      <div className="absolute -top-4 -right-6 w-16 h-16 bg-stone-800 rounded-xl shadow-lg animate-bounce flex items-center justify-center">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {/* PDF icon - top right, slightly rotated */}
+                      <div className="absolute -top-6 -right-10 w-20 h-20 bg-black rounded-lg shadow-lg flex items-center justify-center transform rotate-12">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
 
-                      {/* YouTube icon - bottom left */}
-                      <div className="absolute -bottom-5 -left-5 w-16 h-16 bg-stone-800 rounded-xl shadow-lg animate-bounce delay-100 flex items-center justify-center">
-                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      {/* YouTube icon - bottom left, rotated */}
+                      <div className="absolute -bottom-8 -left-10 w-22 h-22 bg-black rounded-lg shadow-lg flex items-center justify-center transform -rotate-6">
+                        <svg className="w-11 h-11 text-white" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M8 5v14l11-7z"/>
                         </svg>
                       </div>
 
-                      {/* Website icon - middle left */}
-                      <div className="absolute top-6 -left-8 w-14 h-14 bg-stone-800 rounded-xl shadow-lg animate-bounce delay-200 flex items-center justify-center">
-                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      {/* Website icon - middle left, different size */}
+                      <div className="absolute top-6 -left-12 w-18 h-18 bg-black rounded-lg shadow-lg flex items-center justify-center transform rotate-45">
+                        <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                         </svg>
                       </div>
 
-                      {/* Subtitles icon - top center-right */}
-                      <div className="absolute -top-7 right-2 w-14 h-14 bg-stone-800 rounded-xl shadow-lg animate-bounce delay-300 flex items-center justify-center">
-                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {/* Subtitles icon - top left, different angle */}
+                      <div className="absolute -top-7 -left-6 w-19 h-19 bg-black rounded-lg shadow-lg flex items-center justify-center transform -rotate-12">
+                        <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                         </svg>
                       </div>
