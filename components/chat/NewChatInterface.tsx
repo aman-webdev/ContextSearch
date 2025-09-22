@@ -114,6 +114,7 @@ export default function NewChatInterface({
 
   // Handle website/YouTube URL submission
   const handleUrlSubmit = async () => {
+
     // Validate URL format first - return immediately if invalid
     if (!websiteUrl.trim() || !isValidUrl(websiteUrl)) {
       setUrlError('Please enter a valid URL');
@@ -140,6 +141,9 @@ export default function NewChatInterface({
           } else {
             setUrlError(errorData.error || 'Failed to process YouTube URL');
           }
+          // Clear the URL input and reset processing state even on error
+          setWebsiteUrl('');
+          setIsProcessingUrl(false);
           return;
         }
 
@@ -218,7 +222,7 @@ export default function NewChatInterface({
                   )}
                   <button
                     onClick={() => setIsFileModalOpen(true)}
-                    disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing}
+                    disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing || isProcessingUrl}
                     className="group p-2 text-stone-400 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-stone-400 disabled:hover:bg-transparent"
                     title="Upload document"
                   >
@@ -310,7 +314,7 @@ export default function NewChatInterface({
                   )}
                   <button
                     onClick={() => setIsSubtitleModalOpen(true)}
-                    disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing}
+                    disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing || isProcessingUrl}
                     className="px-3 py-1.5 bg-stone-600 hover:bg-stone-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-stone-600"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -433,19 +437,23 @@ export default function NewChatInterface({
                   />
                   <button
                     onClick={handleUrlSubmit}
-                    disabled={!websiteUrl.trim() || !isValidUrl(websiteUrl) || isProcessingUrl || isWebsiteProcessing}
-                    className="px-4 py-2 bg-stone-600 hover:bg-stone-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center space-x-2"
+                    disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing || isProcessingUrl}
+                    className="px-3 py-1.5 bg-stone-600 hover:bg-stone-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-stone-600"
                   >
                     {isProcessingUrl ? (
                       <>
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span>Processing...</span>
                       </>
                     ) : (
-                      <span>Add</span>
+                      <>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Add</span>
+                      </>
                     )}
                   </button>
                 </div>
