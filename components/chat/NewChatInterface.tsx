@@ -187,7 +187,7 @@ export default function NewChatInterface({
   return (
     <div className={`min-h-screen bg-stone-100 flex ${inter.className}`}>
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 bottom-0 w-80 bg-white/50 backdrop-blur-sm border-r border-stone-200/60 flex flex-col z-20">
+      <div className="fixed left-0 top-0 bottom-0 w-84 bg-white/50 backdrop-blur-sm border-r border-stone-200/60 flex flex-col z-20">
         {/* Sidebar Header */}
         <div className="px-6 py-5 border-b border-stone-200/60">
           <h2 className="text-lg font-semibold text-stone-800 flex items-center">
@@ -438,7 +438,7 @@ export default function NewChatInterface({
                   <button
                     onClick={handleUrlSubmit}
                     disabled={isFileUploading || isSubtitleUploading || isWebsiteProcessing || isProcessingUrl}
-                    className="px-3 py-1.5 bg-stone-600 hover:bg-stone-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-stone-600"
+                    className="flex-shrink-0 px-3 py-1.5 bg-stone-600 hover:bg-stone-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-stone-600"
                   >
                     {isProcessingUrl ? (
                       <>
@@ -605,7 +605,7 @@ export default function NewChatInterface({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col ml-80">
+      <div className="flex-1 flex flex-col ml-84">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-5 bg-stone-50 border-b border-stone-200 backdrop-blur-sm">
           <div className="flex items-center space-x-3">
@@ -738,7 +738,7 @@ export default function NewChatInterface({
       </div>
 
       {/* Fixed Input Area - Clean Design */}
-      <div className="fixed bottom-0 left-80 right-0 border-t border-gray-200 bg-white px-6 py-4 z-10">
+      <div className="fixed bottom-0 left-84 right-0 border-t border-gray-200 bg-white px-6 py-4 z-10">
         <div className="max-w-4xl mx-auto">
           {/* Context Indicator */}
           {selectedFile && (

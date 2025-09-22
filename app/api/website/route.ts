@@ -71,7 +71,7 @@ export const POST = async (request: Request) => {
       }), { status: 409 });
     }
 
-    const { websiteDocs, additionalWebsiteMetadata } = await websiteLoader(url);
+    const { websiteDocs, additionalWebsiteMetadata } = await websiteLoader(url, userId);
     console.log(additionalWebsiteMetadata,'add metadata')
     const websiteChunks = await splitTextToChunks(websiteDocs);
 

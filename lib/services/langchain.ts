@@ -24,7 +24,7 @@ const getVectorStore = async () => {
 };
 
 // TODO: modify this for other file types too
-export const loadDocument = async (pathToLoad: string) => {
+export const loadDocument = async (pathToLoad: string, userId : string) => {
   try {
     console.log(`loadDocument: Loading document from ${pathToLoad}`);
     const ext = pathCompleteExtName(pathToLoad)
@@ -32,7 +32,8 @@ export const loadDocument = async (pathToLoad: string) => {
       source : path.basename(pathToLoad),
       uploadedAt : Date.now(),
       type : "FILE",
-      ext 
+      ext ,
+      userId 
     }
 
     let docs: Document[] = []
@@ -125,7 +126,7 @@ export const queryVectorStoreWithFilter = async (query: string, metadata: Record
   }
 };
 
-export const websiteLoader = async (url: string) => {
+export const websiteLoader = async (url: string, userId : string) => {
   try {
     const loader = new RecursiveUrlLoader(url, {
       extractor: compile({
@@ -148,7 +149,8 @@ export const websiteLoader = async (url: string) => {
     const additionalWebsiteMetadata = {
       source : url,
       uploadedAt : Date.now(),
-      type : "WEBSITE"
+      type : "WEBSITE",
+      userId
     }
 
     for(const websiteDoc of websiteDocs) {

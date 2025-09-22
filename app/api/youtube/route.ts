@@ -99,7 +99,8 @@ export const POST = async (request : Request) => {
             pageContent : transcript,
             metadata : {
             
-                ...videoMetadata
+                ...videoMetadata,
+                userId 
             }
         })
         const textChunks = await splitTextToChunks([transcriptDoc])

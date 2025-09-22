@@ -85,7 +85,7 @@ export const POST = async(request: Request) => {
         //TODO: update this to filePath
         let docs, additionalDocMetadata;
         try {
-            const result = await loadDocument(path);
+            const result = await loadDocument(path, userId);
             docs = result.docs;
             additionalDocMetadata = result.additionalDocMetadata;
             console.log("got chunks", docs.length)

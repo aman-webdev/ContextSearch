@@ -83,7 +83,8 @@ export const POST = async(request: Request) => {
                     uploadedAt: Date.now(),
                     type: "SUBTITLE",
                     ext: fileName.endsWith('.srt') ? '.srt' : '.vtt',
-                    source: file.name
+                    source: file.name,
+                    userId
                 };
 
                 for (const doc of docs) {

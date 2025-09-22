@@ -12,6 +12,7 @@ interface AdditionalMetadata {
   fileName: string;
   type: "DOCUMENT" | "WEBSITE";
   ext: string;
+  userId?:string
 }
 
 interface ChatRequest {
@@ -26,6 +27,7 @@ export const POST = async (request: Request) => {
 
     const userId = request.headers.get("x-user-id")
     if(!userId) return new Response('',{status:401})
+    if(additionalMetadata) additionalMetadata.userId = userId
     console.log(userId,'userId here')
 
     if (!query || query.trim().length === 0) {
@@ -66,7 +68,7 @@ export const POST = async (request: Request) => {
 
     const retreivedDocs = additionalMetadata
       ? await queryVectorStoreWithFilter(hypotheticalDoc || query, additionalMetadata as unknown as Record<string, unknown>)
-      : await queryVectorStore(hypotheticalDoc || query);
+      : await queryVectorStoreWithFilter(hypotheticalDoc || query, {userId});
 
     // Format retrieved documents properly
     const contextContent = retreivedDocs
