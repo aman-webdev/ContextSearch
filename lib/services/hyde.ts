@@ -4,13 +4,18 @@ import search from "./tavily";
 
 
 const prepareDoc = async (query : string) => {
-    const webSearchResults = await search(query)
 
-    const SYSTEM_PROMPT = 
+    
+    let webSearchResults
+    if(process.env.USE_WEB_SEARCH)  webSearchResults= await search(query)
+
+    const SYSTEM_PROMPT = process.env.USE_WEB_SEARCH ? 
     `You are an assistant who will receive an array in this format
     {"title" : "string", "content":"string"}
     You are supposed to study the array and return the combined / optminal result (You can even use your pretrained data in the response)
     `
+    :
+    `You are an assistant who is supposed to create a text document about user query based on pre-trained data.`
 
     const chat = await defaultClient.chat.completions.create({
         model: defaultLLMConfig.model,
@@ -21,7 +26,7 @@ const prepareDoc = async (query : string) => {
             },
             {
                 role : "user",
-                content : JSON.stringify(webSearchResults)
+                content : webSearchResults ?  JSON.stringify(webSearchResults) : query
             }
         ]
     })

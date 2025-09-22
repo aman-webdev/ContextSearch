@@ -109,14 +109,26 @@ export const queryVectorStoreWithFilter = async (query: string, metadata: Record
 
       console.log(`queryVectorStoreWithFilter: Using filter:`, JSON.stringify(filter, null, 2));
 
-      const retreivedDocs = await vectorStore.similaritySearch(query, 10, filter);
+      // Alternative search options:
+      // 1. similaritySearchWithScore - returns documents with similarity scores
+      // 2. maxMarginalRelevanceSearch - diversifies results to avoid redundancy
+      // 3. similaritySearchVectorWithScore - search with custom vectors
+
+      const retreivedDocs = await vectorStore.maxMarginalRelevanceSearch(query, {
+        k: 5,
+        filter: filter,
+        fetchK: 10 // fetch more candidates before MMR selection
+      });
       console.log(`queryVectorStoreWithFilter: Found ${retreivedDocs.length} documents with filter`);
       return retreivedDocs;
     } catch (filterError) {
       console.log("queryVectorStoreWithFilter: Filter failed, trying without filter:", filterError);
 
       // Fallback to query without filter
-      const retreivedDocs = await vectorStore.similaritySearch(query, 10);
+      const retreivedDocs = await vectorStore.maxMarginalRelevanceSearch(query, {
+        k: 5,
+        fetchK: 10
+      });
       console.log(`queryVectorStoreWithFilter: Found ${retreivedDocs.length} documents without filter`);
       return retreivedDocs;
     }

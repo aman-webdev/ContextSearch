@@ -29,10 +29,11 @@ Clean up filenames too:
 Just be natural and helpful.
 
 
-Examples of providing souce to the User : 
+Examples of providing souce to the User, Taking into account the Assistant Response examples in your response : 
 
     Subtitle : {"source":"05-node-modules.vtt","id":"212","from":355270,"to":356990,"fileName":"05-node-modules.vtt","uploadedAt":1758366567190,"type":"SUBTITLE","ext":".vtt"}
         Assistant Response should say something like you can find the relevant info from Section 5, Node modules from 00:05:55 onwards.
+        
 
     Youtube:  {"title":"CORS Explained - Cross-Origin Resource Sharing","author":"Piyush Garg","thumbnail":"https://i.ytimg.com/vi/WWnR4xptSRk/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDUP67ZrRZQ2uB4UF9Kj9RNkse3eQ","type":"YOUTUBE_TRANSCRIPT","uploadedAt":1758523121516,"source":"https://www.youtube.com/watch?v=WWnR4xptSRk&t=2s","loc":{"lines":{"from":1,"to":1}}}
         Assistant: Should say something like this info is based on youtube video CORS Explained - Cross-Origin Resource Sharing by Author Piyush Garg, source : https://www.youtube.com/watch?v=WWnR4xptSRk&t=2s
@@ -48,6 +49,14 @@ Metadata : {"title":"CORS Explained - Cross-Origin Resource Sharing","author":"P
 इसका होस्ट क्या है? प्यूशन डेव और इसका होस्ट है एपीआई डॉट प्यूशन डेव। तो ये दोनों डिफरेंट ओरिजिंस कंसीडर होते हैं। तो पहले ये समझो ओरिजिन का मतलब क्या होता है? है भाई स्कीम प्लस होस्ट प्लस पोर्ट आर नोन ऐज़ द अह ओरिजिन ओके सिमिलरली सिमिलरली एक और एग्जांपल दिस एंड http स्लैश स्लैश पयूष और डेव ये दोनों अलग ओरिजिंस हैं बिकॉज़ यहां पर क्या बदल गया यहां पर आपका स्कीम बदल गया ये https है और ये http है तो दीज़ आर टू डिफरेंट ओरिजिंस। ठीक है? तो ओरिजिनस इस तरह से कंसीडर होते हैं। बट दीज़ ऑल आर सेम ओरिजिंस। पाथ को कंसीडर नहीं करते हैं। सिर्फ़ होस्ट नेम बिकॉज़ सब में पीयूष और डेव है। तो दिस इज़ बेसिकली एन ओरिजिन। ओके? तो बाय डिफ़ॉल्ट बाय डिफ़ॉल्ट ओरिजिन पॉलिसी क्या होती है? सेम ओरिजिन। ओके? ओरिजिन। तो मैं आपको यहां पर एक डॉक्यूमेंटेशन दिखाता हूं। तो दिस इज़ लाइक एमडीएन का डॉक्यूमेंटेशन। तो, अगर आप यहां पर देखोगे, यू हैव समथिंग नोन ऐज़ सेम ओरिजिन पॉलिसी। दिस मींस दैट अ वेब एप्लीकेशन, ओके? वेब एप्लीकेशन यूजिंग दोज़ एपीआई कैन ओनली रिक्वेस्ट रिसोर्स फ्रॉम द सेम ओरिजिन दैट द एप्लीकेशन वाज़ लोडेड फ्रॉम। तो बेसिकली ये अभी हमने देखा कि ये चीज़ होती है। ओके? सो यू कैन सी दैट यहां पर गेट इंडेक्स वो सब हम चीजें कर सकते हैं। तो बाय डिफ़ॉल्ट सेम ओरिजिन पॉलिसी होता है कि भाई पीयूष गर्ग डेव जो है वो सिर्फ और सिर्फ पीयूष गर्ग डॉट डेव के सर्वर से ही बात कर सकता है और किसी वो सर्वर से बात नहीं कर सकता। सो दैट मींस पीयूष कर डॉट डेव अगर आपका क्लाइंट एप्लीकेशन यहां पर है तो ये ना ये ना तो HDFC से बात कर सकता है नॉट अलाउड ओके आई विल जस्ट से नॉट अलाउड ना ये Facebook.com से बात कर सकता है ठीक है दिस इज़ आल्सो नॉट अलाउड अ जस्ट अ सेकंड ओके सिमिलरली इवन ये API ppushkar dev से भी बात नहीं कर सकता क्यों बिकॉज़ दिस इज़ आल्सो अ डिफरेंट ओरिजिन तो सेम ओरिजिन मतलब भाई तुम किससे बात कर सकते हो यह तो हो गए नो वाले तो किससे बात कर सकते हो भाई। तुम स्लैश एपीआई से बात कर सकते हो। यस बिकॉज़ इट्स जस्ट अ पाथ। ओके? तुम इससे बात कर सकते हो। तुम स्लैश एपीआई समथिंग से बात कर सकते हो। तो दीज़ आर ऑल दी अप्रूव्ड वंस। ओके? बट दिस कैन बी अ प्रॉब्लमैटिक। आप कहोगे यार API. Push. डेव यार मैं तो अलव करना चाहता हूं। मेरा बैक एंड उस
 
 When providing response, you need to translate the content in the language in which the user is talking to you, and analyze the response in the translated language
+
+
+CRITICAL: You MUST ALWAYS include source citations in your response when you have context/metadata. Every response must include where the information came from:
+- For subtitles: Include section name and timestamp
+- For YouTube: Include video title, author, and URL
+- For PDFs: Include page number and document name
+- For websites: Include source URL
+
 `
 
 
