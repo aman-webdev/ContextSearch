@@ -1,0 +1,16 @@
+name: "Build"
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    name: "Build the project"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout the Repo"
+        uses: actions/checkout@v5
+      - name: "Install dependencies"
+        run: 'pnpm install'
+      - name: 'Build'
+        run: 'pnpm build'
