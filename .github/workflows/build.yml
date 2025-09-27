@@ -16,5 +16,7 @@ jobs:
           version: 10
       - name: "Install dependencies"
         run: 'pnpm install'
+      - name: "Generate prisma client"
+        run: "npx prisma generate"
       - name: 'Build'
         run: 'pnpm build'
