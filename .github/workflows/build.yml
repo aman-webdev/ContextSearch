@@ -7,18 +7,6 @@ jobs:
   build:
     name: "Build the project"
     runs-on: ubuntu-latest
-    env:
-      GEMINI_API_KEY: ${{secrets.GEMINI_API_KEY}}
-      OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
-      SUPABASE_API_KEY: ${{secrets.SUPABASE_API_KEY}}
-      SUPABASE_PROJECT_URL: ${{secrets.SUPABASE_PROJECT_URL}}
-      SUPABASE_BUCKET_NAME: ${{secrets.SUPABASE_BUCKET_NAME}}
-      QDRANT_URL: ${{secrets.QDRANT_URL}}
-      TAVILY_API_KEY: ${{secrets.TAVILY_API_KEY}}
-      JWT_SECRET_KEY: ${{secrets.JWT_SECRET_KEY}}
-      QDRANT_API_KEY: ${{secrets.QDRANT_API_KEY}}
-      DATABASE_URL: ${{secrets.DATABASE_URL}}
-      USE_WEB_SEARCH: ${{secrets.USE_WEB_SEARCH}}
     steps:
       - name: "Checkout the Repo"
         uses: actions/checkout@v5
