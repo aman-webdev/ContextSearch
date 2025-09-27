@@ -1,5 +1,6 @@
 # ContextSearch - AI-Powered Content Search & Chat
 
+
 An intelligent document search and chat application that allows you to upload various types of content and get AI-powered answers from your documents using RAG (Retrieval-Augmented Generation).
 
 <img width="1915" height="968" alt="ContextSearch Application Screenshot" src="https://github.com/user-attachments/assets/d986dbc1-bcca-4988-a313-b5e2e9f0886c" />
